@@ -1,0 +1,4 @@
+# if this var is not empty, create a restic "user guide" in this directory
+# NOTE: specify absolute path from root, with leading and trailing '/'
+restic_user_guide_dir: ''
+

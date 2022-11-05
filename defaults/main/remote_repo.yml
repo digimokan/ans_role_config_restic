@@ -1,0 +1,13 @@
+# true: treat restic remote repo as an empty repo, and initialize it as required
+# false: treat restic remote repo as an existing repo, and never initialize it
+# NOTE: "initializing" creates a local keyfile and inits the remote repo
+initialize_restic_remote_repo: true
+
+# user-selected restic remote repo provider
+restic_remote_repo_provider: 'resticbase'
+
+# restic remote repo providers currently supported by this role
+available_restic_remote_repo_providers:
+  - 'resticbase'
+  - 'rsync.net'
+
