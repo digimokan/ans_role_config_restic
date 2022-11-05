@@ -1,0 +1,7 @@
+- name: "Install the 'restic' application package"
+  ansible.builtin.package:
+    name: restic
+    state: present
+  become: true
+  become_user: root
+
