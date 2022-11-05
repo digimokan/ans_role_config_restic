@@ -1,8 +1,8 @@
 - name: "Install restic application"
   ansible.builtin.include_tasks: install_app/main.yml
 
-# - name: "Create restic config dirs"
-#   ansible.builtin.include_tasks: create_config_dirs/main.yml
+- name: "Create restic cache dir"
+  ansible.builtin.include_tasks: create_cache_dir/main.yml
 
 # - name: "Create restic utility script"
 #   ansible.builtin.include_tasks: create_util_script/main.yml

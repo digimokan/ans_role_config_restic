@@ -1,0 +1,12 @@
+# main user dir for cache
+restic_user_toplevel_cache_dir: "/home/{{ restic_user_name }}/.cache"
+
+# dir for cache/sync info between local files and remote repo
+restic_cache_dir: "{{ restic_user_toplevel_cache_dir }}/restic"
+
+# create and use zfs dataset for cache dir
+use_zfs_dataset_for_restic_cache_dir: true
+
+# if using zfs dataset for cache dir, use this zpool
+restic_config_dir_zpool: 'zroot'
+
