@@ -8,5 +8,5 @@ restic_cache_dir: "{{ restic_user_toplevel_cache_dir }}/restic"
 use_zfs_dataset_for_restic_cache_dir: true
 
 # if using zfs dataset for cache dir, use this zpool
-restic_config_dir_zpool: 'zroot'
+restic_user_zpool: 'zroot'
 
