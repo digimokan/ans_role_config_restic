@@ -13,3 +13,6 @@ default_password_keystring_file_path: "/home/{{ restic_user_name }}/.config/rest
 # stores get-password-cmd used to access remote repo (overrides password keystring)
 default_pass_cmd_file_path: "/home/{{ restic_user_name }}/.config/restic/default_pass_cmd.txt"
 
+# emplace this get-password-cmd in default_pass_cmd_file_path file
+# default_pass_cmd: 'pass -c restic_user1'
+
