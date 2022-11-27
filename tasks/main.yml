@@ -1,18 +1,15 @@
 - name: "Install restic application"
   ansible.builtin.include_tasks: install_app/main.yml
 
-- name: "Create restic cache dir"
-  ansible.builtin.include_tasks: create_cache_dir/main.yml
+- name: "Create restic config dir"
+  ansible.builtin.include_tasks: create_config_dir/main.yml
 
-# - name: "Create restic utility script"
-#   ansible.builtin.include_tasks: create_util_script/main.yml
+- name: "Create restic utility script"
+  ansible.builtin.include_tasks: create_util_script/main.yml
 
 # - name: "Create restic user guide"
 #   ansible.builtin.include_tasks: create_user_guide/main.yml
 #   when: (restic_user_guide_dir)
-
-# - name: "Create keyfile and initialize restic remote repo, as required"
-#   ansible.builtin.include_tasks: create_keyfile_init_repo/main.yml
 
 # - name: "Configure automatic backups"
 #   ansible.builtin.include_tasks: config_auto_backups/main.yml

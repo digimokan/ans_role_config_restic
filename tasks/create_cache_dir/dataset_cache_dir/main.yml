@@ -1,7 +1,0 @@
-- name: "Create zfs dataset for restic cache dir"
-  community.general.zfs:
-    name: "{{ restic_user_zpool }}{{ restic_cache_dir }}"
-    state: present
-  become: true
-  become_user: root
-

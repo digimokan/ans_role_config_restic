@@ -1,0 +1,532 @@
+#!/bin/sh
+# vim: set filetype=sh:
+
+################################################################################
+# purpose:   do restic backups, restores, and query info
+# args/opts: see usage (run with -h option)
+# meta:      script installed by ansible {{ role_name | basename }}
+################################################################################
+
+# GLOBAL VARS:
+
+# User Options And Option-Args
+list_snapshots='false'
+list_snapshot_details='false'
+backup_to_single_snapshot='false'
+auto_backup_and_rotate_snapshots='false'
+extract_snapshot='false'
+delete_snapshot='false'
+generate_keystring_file='false'
+initialize_repo_if_empty='false'
+nuke_entire_repo='false'
+set_repo_password_keystring_file_path='false'
+repo_password_keystring_file_path='{{ default_password_keystring_file_path }}'
+use_repo_pass_cmd='false'
+repo_pass_cmd=''
+s3_bucket_url='{{ restic_s3_bucket_url }}'
+s3_bucket_key_id='{{ restic_s3_bucket_key_id }}'
+s3_bucket_secret_keystring='{{ restic_s3_bucket_secret_keystring }}'
+snapshot_hash_id=''
+local_backup_paths=''
+dry_run=''
+
+# Hard-Coded Settings
+repo_pass_cmd_file_path='{{ default_pass_cmd_file_path }}'
+password_keystring_length='32'
+snapshot_compression_level='max'
+
+print_usage() {
+  echo 'USAGE:'
+  echo "  $(basename "${0}")  -h"
+  echo "  $(basename "${0}")  -l                  [-P|-M <>]  [-R <>]  [-S <>]  [-K <>]  [-C <>]"
+  echo "  $(basename "${0}")  -t  [-s <>]         [-P|-M <>]  [-R <>]  [-S <>]  [-K <>]  [-C <>]"
+  echo "  $(basename "${0}")  -b  -u <>    [-n]   [-P|-M <>]  [-R <>]  [-S <>]  [-K <>]  [-C <>]"
+  echo "  $(basename "${0}")  -a           [-n]   [-P|-M <>]  [-R <>]  [-S <>]  [-K <>]  [-C <>]"
+  echo "  $(basename "${0}")  -x  [-s <>]  [-n]   [-P|-M <>]  [-R <>]  [-S <>]  [-K <>]  [-C <>]"
+  echo "  $(basename "${0}")  -d  -s <>    [-n]   [-P|-M <>]  [-R <>]  [-S <>]  [-K <>]  [-C <>]"
+  echo "  $(basename "${0}")  -g                  [-P]"
+  echo "  $(basename "${0}")  -i                  [-P|-M <>]  [-R <>]  [-S <>]  [-K <>]  [-C <>]"
+  echo "  $(basename "${0}")  --nuke-entire-repo  [-P|-M <>]  [-R <>]  [-S <>]  [-K <>]  [-C <>]"
+  echo 'OPTIONS:'
+  echo '  -h, --help'
+  echo '      print this help message'
+  echo '  -l, --list-snapshots'
+  echo '      list all created snapshots'
+  echo '  -t, --list-snapshot-details'
+  echo '      list details for all created snapshots, or specified snapshot'
+  echo '  -b, --backup-to-single-snapshot'
+  echo '      back up specified backup paths to a snapshot on the remote'
+  echo '  -a, --auto-backup-and-rotate-snapshots'
+  echo '      backup to daily snapshot of {{ automatic_restic_backup_dirs }}, and rotate daily/weekly/etc'
+  echo '  -x, --fetch-and-extract-snapshot'
+  echo '      fetch specified snapshot (defaults to latest) from remote, extract to working dir'
+  echo '  -d, --delete-snapshot'
+  echo '      delete specified snapshot from remote'
+  echo '  -g, --generate-keystring-file'
+  echo "      generate password_keystring_file (if not exist) at '{{ default_password_keystring_file_path }}'"
+  echo '  -i, --initialize-repo-if-empty'
+  echo '      init repo (can be done once only, for a remote bucket)'
+  echo '  -s <snapshot_hash_id>, --snapshot-hash-id=<snapshot_hash_id>'
+  echo '      specified snapshot hash ID'
+  echo '  -u <local_backup_paths>, --local-backup-paths=<local_backup_paths>'
+  echo "      comma-separated list of dirs to backup (absolute paths, with trailing '/')"
+  echo '  -n, --dry-run'
+  echo "      do a 'dry-run' of the backup operation"
+  echo '  -P <file_path>, --repo-password-keystring-file-path=<file_path>'
+  echo "      use keystring file at specified path (default '{{ default_password_keystring_file_path }}') to access repo"
+  echo '  -M <get_password_cmd>, --use-repo-pass-cmd=<get_password_cmd>'
+  echo "      use get_password_cmd output (default from '{{ default_pass_cmd_file_path }}') to access repo"
+  echo '      NOTE: get_password_cmd and associated file override keystring file'
+  echo '  -R <url>, --remote-bucket-url=<url>'
+  echo "      remote S3 bucket url (default '{{ restic_s3_bucket_url }}')"
+  echo '  -S <key_id>, --remote-bucket-key-id=<key_id>'
+  echo "      remote S3 bucket access key ID (default '{{ restic_s3_bucket_key_id }}')"
+  echo '  -K <secret_key_string>, --remote-bucket-secret-key-string=<secret_key_string>'
+  echo "      remote S3 bucket secret key string (default '{{ restic_s3_bucket_secret_keystring }}')"
+  echo '  --nuke-entire-repo'
+  echo '      wipe out contents of entire repo (but leave it initialized)'
+  echo 'EXIT CODES:'
+  echo '    0  ok'
+  echo '    1  usage, arguments, or options error'
+  echo '    5  restic operation error'
+  echo '   10  password-keystring-file error'
+  echo '  255  unknown error'
+  exit "${1}"
+}
+
+get_cmd_opts() {
+  while getopts ':hltbaxdgis:u:nP:M:R:S:K:-:' option; do
+    case "${option}" in
+      h)  handle_help ;;
+      l)  handle_list_snapshots ;;
+      t)  handle_list_snapshot_details ;;
+      b)  handle_backup_to_single_snapshot ;;
+      a)  handle_auto_backup_and_rotate_snapshots ;;
+      x)  handle_fetch_and_extract_snapshot ;;
+      d)  handle_delete_snapshot ;;
+      g)  handle_generate_keystring_file ;;
+      i)  handle_initialize_repo_if_empty ;;
+      s)  handle_snapshot_hash_id "${OPTARG}" ;;
+      u)  handle_local_backup_paths "${OPTARG}" ;;
+      n)  handle_dry_run ;;
+      P)  handle_repo_password_keystring_file_path "${OPTARG}" ;;
+      M)  handle_use_repo_pass_cmd "${OPTARG}" ;;
+      R)  handle_remote_bucket_url "${OPTARG}" ;;
+      S)  handle_remote_bucket_key_id "${OPTARG}" ;;
+      K)  handle_remote_bucket_secret_key_string "${OPTARG}" ;;
+      -)  LONG_OPTARG="${OPTARG#*=}"
+          case ${OPTARG} in
+            help)                                 handle_help ;;
+            help=*)                               handle_illegal_option_arg "${OPTARG}" ;;
+            list-snapshots)                       handle_list_snapshots ;;
+            list-snapshots=*)                     handle_illegal_option_arg "${OPTARG}" ;;
+            list-snapshot-details)                handle_list_snapshot_details ;;
+            list-snapshot-details=*)              handle_illegal_option_arg "${OPTARG}" ;;
+            backup-to-single-snapshot)            handle_backup_to_single_snapshot ;;
+            backup-to-single-snapshot=*)          handle_illegal_option_arg "${OPTARG}" ;;
+            auto-backup-and-rotate-snapshots)     handle_auto_backup_and_rotate_snapshots ;;
+            auto-backup-and-rotate-snapshots=*)   handle_illegal_option_arg "${OPTARG}" ;;
+            fetch-and-extract-snapshot)           handle_fetch_and_extract_snapshot ;;
+            fetch-and-extract-snapshot=*)         handle_illegal_option_arg "${OPTARG}" ;;
+            delete-snapshot)                      handle_delete_snapshot ;;
+            delete-snapshot=*)                    handle_illegal_option_arg "${OPTARG}" ;;
+            generate-keystring-file)              handle_generate_keystring_file ;;
+            generate-keystring-file=*)            handle_illegal_option_arg "${OPTARG}" ;;
+            initialize-repo-if-empty)             handle_initialize_repo_if_empty ;;
+            initialize-repo-if-empty=*)           handle_illegal_option_arg "${OPTARG}" ;;
+            nuke-entire-repo)                     handle_nuke_entire_repo ;;
+            nuke-entire-repo=*)                   handle_illegal_option_arg "${OPTARG}" ;;
+            snapshot-hash-id=?*)                  handle_snapshot_hash_id "${LONG_OPTARG}" ;;
+            snapshot-hash-id*)                    handle_missing_option_arg "${OPTARG}" ;;
+            local-backup-paths=?*)                handle_local_backup_paths "${LONG_OPTARG}" ;;
+            local-backup-paths*)                  handle_missing_option_arg "${OPTARG}" ;;
+            dry-run)                              handle_dry_run ;;
+            dry-run=*)                            handle_illegal_option_arg "${OPTARG}" ;;
+            repo-password-keystring-file-path=?*) handle_repo_password_keystring_file_path "${LONG_OPTARG}" ;;
+            repo-password-keystring-file-path*)   handle_missing_option_arg "${OPTARG}" ;;
+            use-repo-pass-cmd=?*)                 handle_use_repo_pass_cmd "${LONG_OPTARG}" ;;
+            use-repo-pass-cmd*)                   handle_missing_option_arg "${OPTARG}" ;;
+            remote-bucket-url=?*)                 handle_remote_bucket_url "${LONG_OPTARG}" ;;
+            remote-bucket-url*)                   handle_missing_option_arg "${OPTARG}" ;;
+            remote-bucket-key-id=?*)              handle_remote_bucket_key_id "${LONG_OPTARG}" ;;
+            remote-bucket-key-id*)                handle_missing_option_arg "${OPTARG}" ;;
+            remote-bucket-secret-key-string=?*)   handle_remote_bucket_secret_key_string "${LONG_OPTARG}" ;;
+            remote-bucket-secret-key-string*)     handle_missing_option_arg "${OPTARG}" ;;
+            '')                                   break ;; # non-option arg starting with '-'
+            *)                                    handle_unknown_option "${OPTARG}" ;;
+          esac ;;
+      \?) handle_unknown_option "${OPTARG}" ;;
+    esac
+  done
+}
+
+handle_help() {
+  print_usage 0
+}
+
+handle_list_snapshots() {
+  if [ "${list_snapshot_details}" = 'true' ] || \
+     [ "${backup_to_single_snapshot}" = 'true' ] || \
+     [ "${auto_backup_and_rotate_snapshots}" = 'true' ] || \
+     [ "${extract_snapshot}" = 'true' ] || \
+     [ "${delete_snapshot}" = 'true' ] || \
+     [ "${generate_keystring_file}" = 'true' ] || \
+     [ "${initialize_repo_if_empty}" = 'true' ] || \
+     [ "${nuke_entire_repo}" = 'true' ]; then
+    quit_err_msg_with_help "mutually exclusive options selected" 1
+  fi
+  list_snapshots='true'
+}
+
+handle_list_snapshot_details() {
+  if [ "${list_snapshots}" = 'true' ] || \
+     [ "${backup_to_single_snapshot}" = 'true' ] || \
+     [ "${auto_backup_and_rotate_snapshots}" = 'true' ] || \
+     [ "${extract_snapshot}" = 'true' ] || \
+     [ "${delete_snapshot}" = 'true' ] || \
+     [ "${generate_keystring_file}" = 'true' ] || \
+     [ "${initialize_repo_if_empty}" = 'true' ] || \
+     [ "${nuke_entire_repo}" = 'true' ]; then
+    quit_err_msg_with_help "mutually exclusive options selected" 1
+  fi
+  list_snapshot_details='true'
+}
+
+handle_backup_to_single_snapshot() {
+  if [ "${list_snapshots}" = 'true' ] || \
+     [ "${list_snapshot_details}" = 'true' ] || \
+     [ "${auto_backup_and_rotate_snapshots}" = 'true' ] || \
+     [ "${extract_snapshot}" = 'true' ] || \
+     [ "${delete_snapshot}" = 'true' ] || \
+     [ "${generate_keystring_file}" = 'true' ] || \
+     [ "${initialize_repo_if_empty}" = 'true' ] || \
+     [ "${nuke_entire_repo}" = 'true' ]; then
+    quit_err_msg_with_help "mutually exclusive options selected" 1
+  fi
+  backup_to_single_snapshot='true'
+}
+
+handle_auto_backup_and_rotate_snapshots() {
+  if [ "${list_snapshots}" = 'true' ] || \
+     [ "${list_snapshot_details}" = 'true' ] || \
+     [ "${backup_to_single_snapshot}" = 'true' ] || \
+     [ "${extract_snapshot}" = 'true' ] || \
+     [ "${delete_snapshot}" = 'true' ] || \
+     [ "${generate_keystring_file}" = 'true' ] || \
+     [ "${initialize_repo_if_empty}" = 'true' ] || \
+     [ "${nuke_entire_repo}" = 'true' ]; then
+    quit_err_msg_with_help "mutually exclusive options selected" 1
+  fi
+  auto_backup_and_rotate_snapshots='true'
+}
+
+handle_fetch_and_extract_snapshot() {
+  if [ "${list_snapshots}" = 'true' ] || \
+     [ "${list_snapshot_details}" = 'true' ] || \
+     [ "${backup_to_single_snapshot}" = 'true' ] || \
+     [ "${auto_backup_and_rotate_snapshots}" = 'true' ] || \
+     [ "${delete_snapshot}" = 'true' ] || \
+     [ "${generate_keystring_file}" = 'true' ] || \
+     [ "${initialize_repo_if_empty}" = 'true' ] || \
+     [ "${nuke_entire_repo}" = 'true' ]; then
+    quit_err_msg_with_help "mutually exclusive options selected" 1
+  fi
+  extract_snapshot='true'
+}
+
+handle_delete_snapshot() {
+  if [ "${list_snapshots}" = 'true' ] || \
+     [ "${list_snapshot_details}" = 'true' ] || \
+     [ "${backup_to_single_snapshot}" = 'true' ] || \
+     [ "${auto_backup_and_rotate_snapshots}" = 'true' ] || \
+     [ "${extract_snapshot}" = 'true' ] || \
+     [ "${generate_keystring_file}" = 'true' ] || \
+     [ "${initialize_repo_if_empty}" = 'true' ] || \
+     [ "${nuke_entire_repo}" = 'true' ]; then
+    quit_err_msg_with_help "mutually exclusive options selected" 1
+  fi
+  delete_snapshot='true'
+}
+
+handle_generate_keystring_file() {
+  if [ "${list_snapshots}" = 'true' ] || \
+     [ "${list_snapshot_details}" = 'true' ] || \
+     [ "${backup_to_single_snapshot}" = 'true' ] || \
+     [ "${auto_backup_and_rotate_snapshots}" = 'true' ] || \
+     [ "${extract_snapshot}" = 'true' ] || \
+     [ "${delete_snapshot}" = 'true' ] || \
+     [ "${initialize_repo_if_empty}" = 'true' ] || \
+     [ "${nuke_entire_repo}" = 'true' ]; then
+    quit_err_msg_with_help "mutually exclusive options selected" 1
+  fi
+  generate_keystring_file='true'
+}
+
+handle_initialize_repo_if_empty() {
+  if [ "${list_snapshots}" = 'true' ] || \
+     [ "${list_snapshot_details}" = 'true' ] || \
+     [ "${backup_to_single_snapshot}" = 'true' ] || \
+     [ "${auto_backup_and_rotate_snapshots}" = 'true' ] || \
+     [ "${extract_snapshot}" = 'true' ] || \
+     [ "${delete_snapshot}" = 'true' ] || \
+     [ "${generate_keystring_file}" = 'true' ] || \
+     [ "${nuke_entire_repo}" = 'true' ]; then
+    quit_err_msg_with_help "mutually exclusive options selected" 1
+  fi
+  initialize_repo_if_empty='true'
+}
+
+handle_nuke_entire_repo() {
+  if [ "${list_snapshots}" = 'true' ] || \
+     [ "${list_snapshot_details}" = 'true' ] || \
+     [ "${backup_to_single_snapshot}" = 'true' ] || \
+     [ "${auto_backup_and_rotate_snapshots}" = 'true' ] || \
+     [ "${extract_snapshot}" = 'true' ] || \
+     [ "${delete_snapshot}" = 'true' ] || \
+     [ "${generate_keystring_file}" = 'true' ] || \
+     [ "${initialize_repo_if_empty}" = 'true' ]; then
+    quit_err_msg_with_help "mutually exclusive options selected" 1
+  fi
+  nuke_entire_repo='true'
+}
+
+handle_snapshot_hash_id() {
+  snapshot_hash_id=" ${1}"
+}
+
+handle_local_backup_paths() {
+  paths_with_commas="${1}"
+  local_backup_paths=$(echo "${paths_with_commas}" | tr "," " ")
+}
+
+handle_dry_run() {
+  dry_run=' --dry-run'
+}
+
+handle_repo_password_keystring_file_path() {
+  if [ "${use_repo_pass_cmd}" = 'true' ]; then
+    quit_err_msg_with_help "mutually exclusive options selected" 1
+  fi
+  if [ ! -f "${1}" ]; then
+    quit_err_msg_with_help "specified keystring file path ${1} does not exist" 1
+  fi
+  set_repo_password_keystring_file_path='true'
+  repo_password_keystring_file_path="${1}"
+}
+
+handle_use_repo_pass_cmd() {
+  if [ "${set_repo_password_keystring_file_path}" = 'true' ]; then
+    quit_err_msg_with_help "mutually exclusive options selected" 1
+  fi
+  use_repo_pass_cmd='true'
+  repo_pass_cmd="${1}"
+}
+
+handle_remote_bucket_url() {
+  s3_bucket_url="${1}"
+}
+
+handle_remote_bucket_key_id() {
+  s3_bucket_key_id="${1}"
+}
+
+handle_remote_bucket_secret_key_string() {
+  s3_bucket_secret_keystring="${1}"
+}
+
+handle_unknown_option() {
+  err_msg="unknown option \"${1}\""
+  quit_err_msg_with_help "${err_msg}" 1
+}
+
+handle_illegal_option_arg() {
+  err_msg="illegal argument in \"${1}\""
+  quit_err_msg_with_help "${err_msg}" 1
+}
+
+handle_missing_option_arg() {
+  err_msg="missing argument for option \"${1}\""
+  quit_err_msg_with_help "${err_msg}" 1
+}
+
+print_err_msg() {
+  echo 'ERROR:'
+  printf "$(basename "${0}"): %s\\n\\n" "${1}"
+}
+
+quit_err_msg_with_help() {
+  print_err_msg "${1}"
+  print_usage "${2}"
+}
+
+export_opts_for_restic_cmds() {
+  if [ "${repo_pass_cmd}" != '' ]; then
+    export RESTIC_FROM_PASSWORD_COMMAND="${repo_pass_cmd}"
+  elif [ -f "${repo_pass_cmd_file_path}" ]; then
+    RESTIC_FROM_PASSWORD_COMMAND="$(cat "${repo_pass_cmd_file_path}")"
+    export RESTIC_FROM_PASSWORD_COMMAND
+  elif [ -f "${repo_password_keystring_file_path}" ]; then
+    export RESTIC_PASSWORD_FILE="${repo_password_keystring_file_path}"
+  else
+    quit_err_msg_with_help "no keystring_file or repo_pass_cmd specified" 1
+  fi
+
+  export RESTIC_REPOSITORY="${s3_bucket_url}"
+  export AWS_ACCESS_KEY_ID="${s3_bucket_key_id}"
+  export AWS_SECRET_ACCESS_KEY="${s3_bucket_secret_keystring}"
+}
+
+do_list_snapshots() {
+  cmd="restic snapshots"
+  echo "Listing all snapshots on remote with '${cmd}'..."
+  eval "${cmd}"
+  exit_code="${?}"
+  if [ "${exit_code}" != 0 ]; then
+    quit_err_msg_with_help "restic error attempting to list all snapshots" 5
+  fi
+}
+
+do_list_snapshot_details() {
+  cmd="restic --verbose snapshots${snapshot_hash_id}"
+  echo "Listing snapshot details on remote with '${cmd}'..."
+  eval "${cmd}"
+  exit_code="${?}"
+  if [ "${exit_code}" != 0 ]; then
+    quit_err_msg_with_help "restic error attempting to list snapshot details" 5
+  fi
+}
+
+do_backup_to_single_snapshot() {
+  if [ "${local_backup_paths}" = '' ]; then
+    quit_err_msg_with_help "missing 'local-backup-paths' option" 1
+  fi
+  cmd="restic --verbose --compression=${snapshot_compression_level} backup ${local_backup_paths}${dry_run}"
+  echo "Backing up to snapshot on remote with '${cmd}'..."
+  eval "${cmd}"
+  exit_code="${?}"
+  if [ "${exit_code}" != 0 ]; then
+    quit_err_msg_with_help "restic error attempting to backup to snapshot" 5
+  fi
+}
+
+do_rotate_snapshots() {
+  cmd="restic --verbose forget --keep-within-daily 7d --keep-within-weekly 1m --keep-within-monthly 1y --keep-within-yearly 100y --prune${dry_run}"
+  echo "Rotating snapshots on remote with '${cmd}'..."
+  eval "${cmd}"
+  exit_code="${?}"
+  if [ "${exit_code}" != 0 ]; then
+    quit_err_msg_with_help "restic error attempting to rotate snapshots" 5
+  fi
+}
+
+do_auto_backup_and_rotate_snapshots() {
+  if [ "${local_backup_paths}" != '' ]; then
+    quit_err_msg_with_help "invalid 'local-backup-paths' option" 1
+  fi
+  local_backup_paths="{{ automatic_restic_backup_dirs | map('regex_replace', '^\\/|\\/$', '') | list | join(' ') }}"
+  do_backup_to_single_snapshot "$@"
+  do_rotate_snapshots "$@"
+}
+
+do_extract_snapshot() {
+  if [ "${dry_run}" != '' ]; then
+    quit_err_msg_with_help "invalid 'dry-run' option" 1
+  fi
+  if [ "${snapshot_hash_id}" = '' ]; then
+    snapshot_hash_id='latest'
+  fi
+  cmd="restic --verbose restore ${snapshot_hash_id} --target ."
+  echo "Restoring snapshot to working directory with '${cmd}'..."
+  eval "${cmd}"
+  exit_code="${?}"
+  if [ "${exit_code}" != 0 ]; then
+    quit_err_msg_with_help "restic error attempting to restore snapshot to working directory" 5
+  fi
+}
+
+do_delete_snapshot() {
+  if [ "${snapshot_hash_id}" = '' ]; then
+    quit_err_msg_with_help "missing 'snapshot-hash-id' option" 1
+  fi
+  cmd="restic --verbose forget ${snapshot_hash_id} --prune${dry_run}"
+  echo "Deleting snapshot on remote with '${cmd}'..."
+  eval "${cmd}"
+  exit_code="${?}"
+  if [ "${exit_code}" != 0 ]; then
+    quit_err_msg_with_help "restic error attempting to delete snapshot" 5
+  fi
+}
+
+do_generate_keystring_file() {
+  if [ "${dry_run}" != '' ]; then
+    quit_err_msg_with_help "invalid 'dry-run' option" 1
+  fi
+  if [ -f "${repo_password_keystring_file_path}" ]; then
+    quit_err_msg_with_help "repo keystring file ${repo_password_keystring_file_path} already exists" 10
+  fi
+  cmd="pwgen --ambiguous --secure --num-passwords 1 ${password_keystring_length} > '${repo_password_keystring_file_path}'"
+  echo "Generating password-keystring-file at ${repo_password_keystring_file_path} with '${cmd}'..."
+  eval "${cmd}"
+  exit_code="${?}"
+  if [ "${exit_code}" != 0 ]; then
+    quit_err_msg_with_help "error attempting to generate password-keystring-file" 10
+  fi
+}
+
+do_initialize_repo_if_empty() {
+  if [ "${dry_run}" != '' ]; then
+    quit_err_msg_with_help "invalid 'dry-run' option" 1
+  fi
+  # NOTE: version 2 supports compression
+  # see https://restic.readthedocs.io/en/latest/030_preparing_a_new_repo.html#preparing-a-new-repository
+  cmd="restic --verbose init --repository-version=2"
+  echo "Initializing repo on remote with '${cmd}'..."
+  eval "${cmd}"
+  exit_code="${?}"
+  if [ "${exit_code}" != 0 ]; then
+    quit_err_msg_with_help "restic error attempting to initialize repo" 5
+  fi
+}
+
+do_nuke_entire_repo() {
+  if [ "${dry_run}" != '' ]; then
+    quit_err_msg_with_help "invalid 'dry-run' option" 1
+  fi
+  cmd="restic --verbose forget --keep-last; restic --verbose forget latest; restic --verbose --cleanup-cache prune"
+  echo "Nuking entire repo on remote with '${cmd}'..."
+  eval "${cmd}"
+  exit_code="${?}"
+  if [ "${exit_code}" != 0 ]; then
+    quit_err_msg_with_help "restic error attempting to nuke entire repo" 5
+  fi
+}
+
+main() {
+  get_cmd_opts "$@"
+  export_opts_for_restic_cmds "$@"
+  if [ "${list_snapshots}" = 'true' ]; then
+    do_list_snapshots "$@"
+  elif [ "${list_snapshot_details}" = 'true' ]; then
+    do_list_snapshot_details "$@"
+  elif [ "${backup_to_single_snapshot}" = 'true' ]; then
+    do_backup_to_single_snapshot "$@"
+  elif [ "${auto_backup_and_rotate_snapshots}" = 'true' ]; then
+    do_auto_backup_and_rotate_snapshots "$@"
+  elif [ "${extract_snapshot}" = 'true' ]; then
+    do_extract_snapshot "$@"
+  elif [ "${delete_snapshot}" = 'true' ]; then
+    do_delete_snapshot "$@"
+  elif [ "${generate_keystring_file}" = 'true' ]; then
+    do_generate_keystring_file "$@"
+  elif [ "${initialize_repo_if_empty}" = 'true' ]; then
+    do_initialize_repo_if_empty "$@"
+  elif [ "${nuke_entire_repo}" = 'true' ]; then
+    do_nuke_entire_repo "$@"
+  else
+    quit_err_msg_with_help "no valid option selected" 1
+  fi
+  exit 0
+}
+
+main "$@"
+

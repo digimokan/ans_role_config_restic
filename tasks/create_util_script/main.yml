@@ -1,0 +1,10 @@
+- name: "Create '/usr/local/bin/do_restic.sh' utility script"
+  ansible.builtin.template:
+    dest: "/usr/local/bin/do_restic.sh"
+    src: "do_restic.j2"
+    owner: 'root'
+    mode: '755'
+    force: yes
+  become: true
+  become_user: root
+

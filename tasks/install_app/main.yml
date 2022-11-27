@@ -5,3 +5,10 @@
   become: true
   become_user: root
 
+- name: "Install supporting 'pwgen' application package"
+  ansible.builtin.package:
+    name: pwgen
+    state: present
+  become: true
+  become_user: root
+

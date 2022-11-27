@@ -9,6 +9,7 @@ Install the restic backup program, and configure backups to a remote repo.
 
 * [Purpose](#purpose)
 * [Background](#background)
+* [Requirements](#requirements)
 * [Supported Operating Systems](#supported-operating-systems)
 * [Quick Start](#quick-start)
     * [Use From Playbook](#use-from-playbook)
@@ -26,16 +27,34 @@ Install the restic backup program, and configure backups to a remote repo.
 ## Background
 
 * restic can back up files to a variety of remote servers and protocols.
-* This role configures backups to a compatible remote
-  [AWS S3 bucket](https://restic.readthedocs.io/en/latest/030_preparing_a_new_repo.html#amazon-s3).
-* The remote AWS S3 bucket holds a _restic repo_, which must be initialized.
+* This role configures backups to an AWS-S3-compatible remote
+  [bucket](https://restic.readthedocs.io/en/latest/030_preparing_a_new_repo.html#amazon-s3).
+* The remote S3 bucket holds a [restic repo](https://restic.readthedocs.io/en/latest/030_preparing_a_new_repo.html).
 * The remote repo is accessed via these credentials:
-      * `AWS_ACCESS_KEY_ID` (issued by bucket provider)
-      * `AWS_SECRET_ACCESS_KEY` (issued by bucket provider)
-      * repo password (set by user)
-* Multiple machines can send backups to the repo.
-* The remote can only host one repo.
-* _WARNING: ensure that all restic operations are executed by the same user._
+      * [`RESTIC_REPOSITORY`](../defaults/main/remote_repo.yml)
+      * [`AWS_ACCESS_KEY_ID`](../defaults/main/remote_repo.yml)
+      * [`AWS_SECRET_ACCESS_KEY`](../defaults/main/remote_repo.yml)
+      * [repo password keystring](../defaults/main/remote_repo.yml)
+* On the remote, a repo can be [initialized only once](https://forum.restic.net/t/restoring-on-a-new-host/1182).
+* Once initialized, the most you can do is [wipeout all snapshots](https://github.com/restic/restic/issues/1977#issuecomment-417393284).
+* Initializing the repo takes a [keystring as input](https://restic.readthedocs.io/en/latest/030_preparing_a_new_repo.html#local).
+* The keystring is used to create a key, with a [master-key subcomponent](https://forum.restic.net/t/restic-key-passwd-options/5425/4).
+* The same machine can [create more keys](https://restic.readthedocs.io/en/latest/070_encryption.html#manage-repository-keys)
+  (all with the same master-key subcomponent).
+* Anyone with the S3 `KEY_ID` and `ACCESS_KEY` can access the remote, but only
+  a key with the master-key subcomponent can
+  [access the repo and its data](https://restic.readthedocs.io/en/latest/030_preparing_a_new_repo.html#local).
+* Therefore, ensure that the keystring is backed up somewhere.
+* Also, ensure that all restic operations are executed by the same user.
+
+## Requirements
+
+1. S3 bucket has been created on an S3-compatible storage provider.
+2. Bucket has been initialized.
+    * The [utility script](../templates/do_restic.j2) can be used to initialize
+      the bucket.
+    * It is ok if the bucket already has snapshots; if the same files are
+      being backed up, they will be deduplicated.
 
 ## Supported Operating Systems
 
@@ -73,13 +92,12 @@ Install the restic backup program, and configure backups to a remote repo.
            name: ans_role_config_restic
          vars:
            restic_user_name: 'user2'
-           restic_aws_bucket_url: 's3:https://s3.wasabisys.com/my-bucket-name'
-           restic_aws_access_key_id: '<MY-WASABI-ACCESS-KEY-ID>'
-           restic_aws_secret_access_key: '<MY-WASABI-SECRET-ACCESS-KEY>'
+           restic_s3_bucket_url: 's3:https://s3.someprovider.com/my-bucket-name'
+           restic_s3_access_key_id: '<MY-S3-ACCESS-KEY-ID>'
+           restic_s3_secret_access_key: '<MY-S3-SECRET-ACCESS-KEY>'
            enable_automatic_backups: true
            automatic_backup_dirs:
              - '/home/user2/Documents/'
-
    ```
 
 ## Role Options
@@ -91,9 +109,7 @@ See the role `defaults` files for main role vars listings:
 Define these _required_ vars for the role:
 
   * `restic_user_name`: name of primary restic user to configure the backups for
-  * `restic_aws_bucket_url`: an AWS S3 bucket that will host the remote repo
-  * `restic_aws_access_key_id`: the provider-issued ID for the bucket
-  * `restic_aws_secret_access_key`: the provider-issued key-string for the bucket
+  * [S3 access credentials and repo password](../defaults/main/remote_repo.yml)
 
 ## Contributing
 

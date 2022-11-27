@@ -1,9 +1,0 @@
-- name: "Create normal filesystem directory for restic cache dir"
-  ansible.builtin.file:
-    path: "{{ restic_cache_dir }}"
-    state: directory
-    owner: "{{ restic_user_name }}"
-    mode: '755'
-  become: true
-  become_user: root
-

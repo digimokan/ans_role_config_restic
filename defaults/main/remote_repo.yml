@@ -1,13 +1,15 @@
-# true: treat restic remote repo as an empty repo, and initialize it as required
-# false: treat restic remote repo as an existing repo, and never initialize it
-# NOTE: "initializing" creates a local keyfile and inits the remote repo
-initialize_restic_remote_repo: true
+# an S3 bucket that will host the remote repo (MUST DEFINE!)
+# restic_s3_bucket_url: 's3:https://s3.wasabisys.com/my-bucket-name'
 
-# user-selected restic remote repo provider
-restic_remote_repo_provider: 'resticbase'
+# the provider-issued ID for the bucket (MUST DEFINE!)
+# restic_s3_access_key_id: '<my-wasabi-access-key-id>'
 
-# restic remote repo providers currently supported by this role
-available_restic_remote_repo_providers:
-  - 'resticbase'
-  - 'rsync.net'
+# the provider-issued key-string for the bucket (MUST DEFINE!)
+# restic_s3_secret_access_key: '<my-wasabi-secret-access-key>'
+
+# stores password keystring used to access remote repo
+default_password_keystring_file_path: "/home/{{ restic_user_name }}/.config/restic/default_password_keystring.txt"
+
+# stores get-password-cmd used to access remote repo (overrides password keystring)
+default_pass_cmd_file_path: "/home/{{ restic_user_name }}/.config/restic/default_pass_cmd.txt"
 
