@@ -367,7 +367,7 @@ export_opts_for_restic_cmds() {
     export RESTIC_FROM_PASSWORD_COMMAND
   elif [ -f "${repo_password_keystring_file_path}" ]; then
     export RESTIC_PASSWORD_FILE="${repo_password_keystring_file_path}"
-  else
+  elif [ "${generate_keystring_file}" = 'false' ]; then
     quit_err_msg_with_help "no keystring_file or repo_pass_cmd specified" 1
   fi
 
