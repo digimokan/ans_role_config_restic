@@ -164,6 +164,28 @@ handle_help() {
   print_usage 0
 }
 
+print_err_msg() {
+  echo 'ERROR:'
+  printf "$(basename "${0}"): %s\\n\\n" "${1}"
+}
+
+quit_err_msg_with_help() {
+  print_err_msg "${1}"
+  print_usage "${2}"
+}
+
+try_with_exit() {
+  cmd="${1}"
+  err_msg="${2}"
+  err_code="${3}"
+  echo "Executing cmd: '${cmd}'..."
+  eval "${cmd}"
+  exit_code="${?}"
+  if [ "${exit_code}" != 0 ]; then
+    quit_err_msg_with_help "${err_msg}" "${err_code}"
+  fi
+}
+
 handle_list_snapshots() {
   if [ "${list_snapshot_details}" = 'true' ] || \
      [ "${backup_to_single_snapshot}" = 'true' ] || \
@@ -349,16 +371,6 @@ handle_missing_option_arg() {
   quit_err_msg_with_help "${err_msg}" 1
 }
 
-print_err_msg() {
-  echo 'ERROR:'
-  printf "$(basename "${0}"): %s\\n\\n" "${1}"
-}
-
-quit_err_msg_with_help() {
-  print_err_msg "${1}"
-  print_usage "${2}"
-}
-
 export_opts_for_restic_cmds() {
   if [ "${repo_pass_cmd}" != '' ]; then
     export RESTIC_FROM_PASSWORD_COMMAND="${repo_pass_cmd}"
@@ -377,46 +389,38 @@ export_opts_for_restic_cmds() {
 }
 
 do_list_snapshots() {
-  cmd="restic snapshots"
-  echo "Listing all snapshots on remote with '${cmd}'..."
-  eval "${cmd}"
-  exit_code="${?}"
-  if [ "${exit_code}" != 0 ]; then
-    quit_err_msg_with_help "restic error attempting to list all snapshots" 5
-  fi
+  try_with_exit \
+    "restic snapshots" \
+    "restic error attempting to list all snapshots" 5
 }
 
 do_list_snapshot_details() {
-  cmd="restic --verbose snapshots${snapshot_hash_id}"
-  echo "Listing snapshot details on remote with '${cmd}'..."
-  eval "${cmd}"
-  exit_code="${?}"
-  if [ "${exit_code}" != 0 ]; then
-    quit_err_msg_with_help "restic error attempting to list snapshot details" 5
-  fi
+  try_with_exit \
+    "restic --verbose snapshots${snapshot_hash_id}" \
+    "restic error attempting to list snapshot details" 5
 }
 
 do_backup_to_single_snapshot() {
   if [ "${local_backup_paths}" = '' ]; then
     quit_err_msg_with_help "missing 'local-backup-paths' option" 1
   fi
-  cmd="restic --verbose --compression=${snapshot_compression_level} backup ${local_backup_paths}${dry_run}"
-  echo "Backing up to snapshot on remote with '${cmd}'..."
-  eval "${cmd}"
-  exit_code="${?}"
-  if [ "${exit_code}" != 0 ]; then
-    quit_err_msg_with_help "restic error attempting to backup to snapshot" 5
-  fi
+
+  try_with_exit \
+    "restic --verbose --compression=${snapshot_compression_level} backup ${local_backup_paths}${dry_run}" \
+    "restic error attempting to backup to snapshot" 5
 }
 
 do_rotate_snapshots() {
-  cmd="restic --verbose forget --keep-within-daily 7d --keep-within-weekly 1m --keep-within-monthly 1y --keep-within-yearly 100y --prune${dry_run}"
-  echo "Rotating snapshots on remote with '${cmd}'..."
-  eval "${cmd}"
-  exit_code="${?}"
-  if [ "${exit_code}" != 0 ]; then
-    quit_err_msg_with_help "restic error attempting to rotate snapshots" 5
-  fi
+  rot="restic --verbose forget"
+  rot="${rot} --keep-within-daily 7d"
+  rot="${rot} --keep-within-weekly 1m"
+  rot="${rot} --keep-within-monthly 1 "
+  rot="${rot} --keep-within-yearly 100y"
+  rot="${rot} --prune${dry_run}"
+
+  try_with_exit \
+    "${rot}" \
+    "restic error attempting to rotate snapshots" 5
 }
 
 do_auto_backup_and_rotate_snapshots() {
@@ -435,26 +439,20 @@ do_extract_snapshot() {
   if [ "${snapshot_hash_id}" = '' ]; then
     snapshot_hash_id='latest'
   fi
-  cmd="restic --verbose restore ${snapshot_hash_id} --target ."
-  echo "Restoring snapshot to working directory with '${cmd}'..."
-  eval "${cmd}"
-  exit_code="${?}"
-  if [ "${exit_code}" != 0 ]; then
-    quit_err_msg_with_help "restic error attempting to restore snapshot to working directory" 5
-  fi
+
+  try_with_exit \
+    "restic --verbose restore ${snapshot_hash_id} --target ." \
+    "restic error attempting to restore snapshot to working directory" 5
 }
 
 do_delete_snapshot() {
   if [ "${snapshot_hash_id}" = '' ]; then
     quit_err_msg_with_help "missing 'snapshot-hash-id' option" 1
   fi
-  cmd="restic --verbose forget ${snapshot_hash_id} --prune${dry_run}"
-  echo "Deleting snapshot on remote with '${cmd}'..."
-  eval "${cmd}"
-  exit_code="${?}"
-  if [ "${exit_code}" != 0 ]; then
-    quit_err_msg_with_help "restic error attempting to delete snapshot" 5
-  fi
+
+  try_with_exit \
+    "restic --verbose forget ${snapshot_hash_id} --prune${dry_run}" \
+    "restic error attempting to delete snapshot" 5
 }
 
 do_generate_keystring_file() {
@@ -464,41 +462,35 @@ do_generate_keystring_file() {
   if [ -f "${repo_password_keystring_file_path}" ]; then
     quit_err_msg_with_help "repo keystring file ${repo_password_keystring_file_path} already exists" 10
   fi
-  cmd="pwgen --ambiguous --secure --num-passwords 1 ${password_keystring_length} > '${repo_password_keystring_file_path}'"
-  echo "Generating password-keystring-file at ${repo_password_keystring_file_path} with '${cmd}'..."
-  eval "${cmd}"
-  exit_code="${?}"
-  if [ "${exit_code}" != 0 ]; then
-    quit_err_msg_with_help "error attempting to generate password-keystring-file" 10
-  fi
+
+  try_with_exit \
+    "pwgen --ambiguous --secure --num-passwords 1 ${password_keystring_length} > '${repo_password_keystring_file_path}'" \
+    "error attempting to generate password-keystring-file" 10
 }
 
 do_initialize_repo_if_empty() {
   if [ "${dry_run}" != '' ]; then
     quit_err_msg_with_help "invalid 'dry-run' option" 1
   fi
+
   # NOTE: version 2 supports compression
   # see https://restic.readthedocs.io/en/latest/030_preparing_a_new_repo.html#preparing-a-new-repository
-  cmd="restic --verbose init --repository-version=2"
-  echo "Initializing repo on remote with '${cmd}'..."
-  eval "${cmd}"
-  exit_code="${?}"
-  if [ "${exit_code}" != 0 ]; then
-    quit_err_msg_with_help "restic error attempting to initialize repo" 5
-  fi
+  try_with_exit \
+    "restic --verbose init --repository-version=2" \
+    "restic error attempting to initialize repo" 5
 }
 
 do_nuke_entire_repo() {
-  if [ "${dry_run}" != '' ]; then
-    quit_err_msg_with_help "invalid 'dry-run' option" 1
-  fi
-  cmd="restic --verbose forget --keep-last; restic --verbose forget latest; restic --verbose --cleanup-cache prune"
-  echo "Nuking entire repo on remote with '${cmd}'..."
-  eval "${cmd}"
-  exit_code="${?}"
-  if [ "${exit_code}" != 0 ]; then
-    quit_err_msg_with_help "restic error attempting to nuke entire repo" 5
-  fi
+  # ref: https://github.com/restic/restic/issues/1977#issuecomment-417393284
+  try_with_exit \
+    "restic --verbose forget --keep-last=1" \
+    "restic nuke error in step 1 (delete all but latest snapshots)" 5
+  try_with_exit \
+    "restic --verbose forget latest" \
+    "restic nuke error in step 2 (delete latest snapshot)" 5
+  try_with_exit \
+    "restic --verbose --cleanup-cache prune" \
+    "restic nuke error in step 3 (clean cache)" 5
 }
 
 main() {
