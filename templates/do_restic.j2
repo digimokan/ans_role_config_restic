@@ -426,7 +426,7 @@ do_auto_backup_and_rotate_snapshots() {
   if [ "${local_backup_paths}" != '' ]; then
     quit_err_msg_with_help "invalid 'local-backup-paths' option" 1
   fi
-  local_backup_paths="{{ automatic_restic_backup_dirs | map('regex_replace', '^\\/|\\/$', '') | list | join(' ') }}"
+  local_backup_paths="{{ automatic_restic_backup_dirs | join(' ') }}"
   do_backup_to_single_snapshot "$@"
   do_rotate_snapshots "$@"
 }
