@@ -53,7 +53,7 @@ print_usage() {
   echo '  -l, --list-snapshots'
   echo '      list all created snapshots'
   echo '  -t, --list-snapshot-details'
-  echo '      list details for all created snapshots, or specified snapshot'
+  echo '      list compressed sizes for all created snapshots, or specified snapshot'
   echo '  -b, --backup-to-single-snapshot'
   echo '      back up specified backup paths to a snapshot on the remote'
   echo '  -a, --auto-backup-and-rotate-snapshots'
@@ -396,7 +396,7 @@ do_list_snapshots() {
 
 do_list_snapshot_details() {
   try_with_exit \
-    "restic --verbose snapshots${snapshot_hash_id}" \
+    "restic stats --mode=raw-data ${snapshot_hash_id}" \
     "restic error attempting to list snapshot details" 5
 }
 
