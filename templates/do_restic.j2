@@ -373,9 +373,9 @@ handle_missing_option_arg() {
 
 export_opts_for_restic_cmds() {
   if [ "${repo_pass_cmd}" != '' ]; then
-    export RESTIC_FROM_PASSWORD_COMMAND="${repo_pass_cmd}"
+    export RESTIC_PASSWORD_COMMAND="${repo_pass_cmd}"
   elif [ -f "${repo_pass_cmd_file_path}" ]; then
-    export RESTIC_FROM_PASSWORD_COMMAND="cat '${repo_pass_cmd_file_path}'"
+    export RESTIC_PASSWORD_COMMAND="cat '${repo_pass_cmd_file_path}'"
   elif [ -f "${repo_password_keystring_file_path}" ]; then
     export RESTIC_PASSWORD_FILE="${repo_password_keystring_file_path}"
   elif [ "${generate_keystring_file}" = 'false' ]; then
