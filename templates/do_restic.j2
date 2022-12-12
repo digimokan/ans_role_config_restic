@@ -414,7 +414,7 @@ do_rotate_snapshots() {
   rot="restic --verbose forget"
   rot="${rot} --keep-within-daily 7d"
   rot="${rot} --keep-within-weekly 1m"
-  rot="${rot} --keep-within-monthly 1 "
+  rot="${rot} --keep-within-monthly 1y"
   rot="${rot} --keep-within-yearly 100y"
   rot="${rot} --prune${dry_run}"
 
