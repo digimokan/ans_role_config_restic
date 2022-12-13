@@ -396,7 +396,7 @@ do_list_snapshots() {
 
 do_list_snapshot_details() {
   try_with_exit \
-    "restic stats --mode=raw-data ${snapshot_hash_id}" \
+    "restic stats --mode=raw-data${snapshot_hash_id}" \
     "restic error attempting to list snapshot details" 5
 }
 
@@ -437,11 +437,11 @@ do_extract_snapshot() {
     quit_err_msg_with_help "invalid 'dry-run' option" 1
   fi
   if [ "${snapshot_hash_id}" = '' ]; then
-    snapshot_hash_id='latest'
+    snapshot_hash_id=' latest'
   fi
 
   try_with_exit \
-    "restic --verbose restore ${snapshot_hash_id} --target ." \
+    "restic --verbose restore${snapshot_hash_id} --target ." \
     "restic error attempting to restore snapshot to working directory" 5
 }
 
@@ -451,7 +451,7 @@ do_delete_snapshot() {
   fi
 
   try_with_exit \
-    "restic --verbose forget ${snapshot_hash_id} --prune${dry_run}" \
+    "restic --verbose forget${snapshot_hash_id} --prune${dry_run}" \
     "restic error attempting to delete snapshot" 5
 }
 
