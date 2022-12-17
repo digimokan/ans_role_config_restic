@@ -38,15 +38,15 @@ snapshot_compression_level='max'
 print_usage() {
   echo 'USAGE:'
   echo "  $(basename "${0}")  -h"
-  echo "  $(basename "${0}")  -l                  [-P|-M <>]  [-R <>]  [-S <>]  [-K <>]  [-C <>]"
-  echo "  $(basename "${0}")  -t  [-s <>]         [-P|-M <>]  [-R <>]  [-S <>]  [-K <>]  [-C <>]"
-  echo "  $(basename "${0}")  -b  -p <>    [-n]   [-P|-M <>]  [-R <>]  [-S <>]  [-K <>]  [-C <>]"
-  echo "  $(basename "${0}")  -a           [-n]   [-P|-M <>]  [-R <>]  [-S <>]  [-K <>]  [-C <>]"
-  echo "  $(basename "${0}")  -x  [-s <>]         [-P|-M <>]  [-R <>]  [-S <>]  [-K <>]  [-C <>]"
-  echo "  $(basename "${0}")  -d  -s <>    [-n]   [-P|-M <>]  [-R <>]  [-S <>]  [-K <>]  [-C <>]"
+  echo "  $(basename "${0}")  -l                  [-P|-M <>]  [-L <>]  [-S <>]  [-K <>]  [-C <>]"
+  echo "  $(basename "${0}")  -t  [-s <>]         [-P|-M <>]  [-L <>]  [-S <>]  [-K <>]  [-C <>]"
+  echo "  $(basename "${0}")  -b  -p <>    [-n]   [-P|-M <>]  [-L <>]  [-S <>]  [-K <>]  [-C <>]"
+  echo "  $(basename "${0}")  -a           [-n]   [-P|-M <>]  [-L <>]  [-S <>]  [-K <>]  [-C <>]"
+  echo "  $(basename "${0}")  -x  [-s <>]         [-P|-M <>]  [-L <>]  [-S <>]  [-K <>]  [-C <>]"
+  echo "  $(basename "${0}")  -d  -s <>    [-n]   [-P|-M <>]  [-L <>]  [-S <>]  [-K <>]  [-C <>]"
   echo "  $(basename "${0}")  -g                  [-P]"
-  echo "  $(basename "${0}")  -i                  [-P|-M <>]  [-R <>]  [-S <>]  [-K <>]  [-C <>]"
-  echo "  $(basename "${0}")  --nuke-entire-repo  [-P|-M <>]  [-R <>]  [-S <>]  [-K <>]  [-C <>]"
+  echo "  $(basename "${0}")  -i                  [-P|-M <>]  [-L <>]  [-S <>]  [-K <>]  [-C <>]"
+  echo "  $(basename "${0}")  --nuke-entire-repo  [-P|-M <>]  [-L <>]  [-S <>]  [-K <>]  [-C <>]"
   echo 'OPTIONS:'
   echo '  -h, --help'
   echo '      print this help message'
@@ -77,7 +77,7 @@ print_usage() {
   echo '  -M <get_password_cmd>, --use-repo-pass-cmd=<get_password_cmd>'
   echo "      use get_password_cmd output (default from '{{ default_pass_cmd_file_path }}') to access repo"
   echo '      NOTE: get_password_cmd and associated file override keystring file'
-  echo '  -R <url>, --remote-bucket-url=<url>'
+  echo '  -L <url>, --remote-bucket-url=<url>'
   echo "      remote S3 bucket url (default '{{ restic_s3_bucket_url }}')"
   echo '  -S <key_id>, --remote-bucket-key-id=<key_id>'
   echo "      remote S3 bucket access key ID (default '{{ restic_s3_bucket_key_id }}')"
@@ -95,7 +95,7 @@ print_usage() {
 }
 
 get_cmd_opts() {
-  while getopts ':hltbaxdgis:p:nP:M:R:S:K:-:' option; do
+  while getopts ':hltbaxdgis:p:nP:M:L:S:K:-:' option; do
     case "${option}" in
       h)  handle_help ;;
       l)  handle_list_snapshots ;;
@@ -111,7 +111,7 @@ get_cmd_opts() {
       n)  handle_dry_run ;;
       P)  handle_repo_password_keystring_file_path "${OPTARG}" ;;
       M)  handle_use_repo_pass_cmd "${OPTARG}" ;;
-      R)  handle_remote_bucket_url "${OPTARG}" ;;
+      L)  handle_remote_bucket_url "${OPTARG}" ;;
       S)  handle_remote_bucket_key_id "${OPTARG}" ;;
       K)  handle_remote_bucket_secret_key_string "${OPTARG}" ;;
       -)  LONG_OPTARG="${OPTARG#*=}"
