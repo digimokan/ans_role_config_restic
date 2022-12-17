@@ -40,7 +40,7 @@ print_usage() {
   echo "  $(basename "${0}")  -h"
   echo "  $(basename "${0}")  -l                  [-P|-M <>]  [-R <>]  [-S <>]  [-K <>]  [-C <>]"
   echo "  $(basename "${0}")  -t  [-s <>]         [-P|-M <>]  [-R <>]  [-S <>]  [-K <>]  [-C <>]"
-  echo "  $(basename "${0}")  -b  -u <>    [-n]   [-P|-M <>]  [-R <>]  [-S <>]  [-K <>]  [-C <>]"
+  echo "  $(basename "${0}")  -b  -p <>    [-n]   [-P|-M <>]  [-R <>]  [-S <>]  [-K <>]  [-C <>]"
   echo "  $(basename "${0}")  -a           [-n]   [-P|-M <>]  [-R <>]  [-S <>]  [-K <>]  [-C <>]"
   echo "  $(basename "${0}")  -x  [-s <>]         [-P|-M <>]  [-R <>]  [-S <>]  [-K <>]  [-C <>]"
   echo "  $(basename "${0}")  -d  -s <>    [-n]   [-P|-M <>]  [-R <>]  [-S <>]  [-K <>]  [-C <>]"
@@ -68,7 +68,7 @@ print_usage() {
   echo '      init repo (can be done once only, for a remote bucket)'
   echo '  -s <snapshot_hash_id>, --snapshot-hash-id=<snapshot_hash_id>'
   echo '      specified snapshot hash ID'
-  echo '  -u <local_backup_paths>, --local-backup-paths=<local_backup_paths>'
+  echo '  -p <local_backup_paths>, --local-backup-paths=<local_backup_paths>'
   echo "      comma-separated list of dirs to backup (absolute paths, with trailing '/')"
   echo '  -n, --dry-run'
   echo "      do a 'dry-run' of the backup operation"
@@ -95,7 +95,7 @@ print_usage() {
 }
 
 get_cmd_opts() {
-  while getopts ':hltbaxdgis:u:nP:M:R:S:K:-:' option; do
+  while getopts ':hltbaxdgis:p:nP:M:R:S:K:-:' option; do
     case "${option}" in
       h)  handle_help ;;
       l)  handle_list_snapshots ;;
@@ -107,7 +107,7 @@ get_cmd_opts() {
       g)  handle_generate_keystring_file ;;
       i)  handle_initialize_repo_if_empty ;;
       s)  handle_snapshot_hash_id "${OPTARG}" ;;
-      u)  handle_local_backup_paths "${OPTARG}" ;;
+      p)  handle_local_backup_paths "${OPTARG}" ;;
       n)  handle_dry_run ;;
       P)  handle_repo_password_keystring_file_path "${OPTARG}" ;;
       M)  handle_use_repo_pass_cmd "${OPTARG}" ;;
