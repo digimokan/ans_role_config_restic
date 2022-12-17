@@ -38,15 +38,15 @@ snapshot_compression_level='max'
 print_usage() {
   echo 'USAGE:'
   echo "  $(basename "${0}")  -h"
-  echo "  $(basename "${0}")  -l                  [-P|-M <>]  [-L <>]  [-S <>]  [-K <>]  [-C <>]"
-  echo "  $(basename "${0}")  -t  [-s <>]         [-P|-M <>]  [-L <>]  [-S <>]  [-K <>]  [-C <>]"
-  echo "  $(basename "${0}")  -b  -p <>    [-n]   [-P|-M <>]  [-L <>]  [-S <>]  [-K <>]  [-C <>]"
-  echo "  $(basename "${0}")  -a           [-n]   [-P|-M <>]  [-L <>]  [-S <>]  [-K <>]  [-C <>]"
-  echo "  $(basename "${0}")  -x  [-s <>]         [-P|-M <>]  [-L <>]  [-S <>]  [-K <>]  [-C <>]"
-  echo "  $(basename "${0}")  -d  -s <>    [-n]   [-P|-M <>]  [-L <>]  [-S <>]  [-K <>]  [-C <>]"
+  echo "  $(basename "${0}")  -l                  [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]"
+  echo "  $(basename "${0}")  -t  [-s <>]         [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]"
+  echo "  $(basename "${0}")  -b  -p <>    [-n]   [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]"
+  echo "  $(basename "${0}")  -a           [-n]   [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]"
+  echo "  $(basename "${0}")  -x  [-s <>]         [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]"
+  echo "  $(basename "${0}")  -d  -s <>    [-n]   [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]"
   echo "  $(basename "${0}")  -g                  [-P]"
-  echo "  $(basename "${0}")  -i                  [-P|-M <>]  [-L <>]  [-S <>]  [-K <>]  [-C <>]"
-  echo "  $(basename "${0}")  --nuke-entire-repo  [-P|-M <>]  [-L <>]  [-S <>]  [-K <>]  [-C <>]"
+  echo "  $(basename "${0}")  -i                  [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]"
+  echo "  $(basename "${0}")  --nuke-entire-repo  [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]"
   echo 'OPTIONS:'
   echo '  -h, --help'
   echo '      print this help message'
@@ -79,7 +79,7 @@ print_usage() {
   echo '      NOTE: get_password_cmd and associated file override keystring file'
   echo '  -L <url>, --remote-bucket-url=<url>'
   echo "      remote S3 bucket url (default '{{ restic_s3_bucket_url }}')"
-  echo '  -S <key_id>, --remote-bucket-key-id=<key_id>'
+  echo '  -I <key_id>, --remote-bucket-key-id=<key_id>'
   echo "      remote S3 bucket access key ID (default '{{ restic_s3_bucket_key_id }}')"
   echo '  -K <secret_key_string>, --remote-bucket-secret-key-string=<secret_key_string>'
   echo "      remote S3 bucket secret key string (default '{{ restic_s3_bucket_secret_keystring }}')"
@@ -95,7 +95,7 @@ print_usage() {
 }
 
 get_cmd_opts() {
-  while getopts ':hltbaxdgis:p:nP:M:L:S:K:-:' option; do
+  while getopts ':hltbaxdgis:p:nP:M:L:I:K:-:' option; do
     case "${option}" in
       h)  handle_help ;;
       l)  handle_list_snapshots ;;
@@ -112,7 +112,7 @@ get_cmd_opts() {
       P)  handle_repo_password_keystring_file_path "${OPTARG}" ;;
       M)  handle_use_repo_pass_cmd "${OPTARG}" ;;
       L)  handle_remote_bucket_url "${OPTARG}" ;;
-      S)  handle_remote_bucket_key_id "${OPTARG}" ;;
+      I)  handle_remote_bucket_key_id "${OPTARG}" ;;
       K)  handle_remote_bucket_secret_key_string "${OPTARG}" ;;
       -)  LONG_OPTARG="${OPTARG#*=}"
           case ${OPTARG} in
