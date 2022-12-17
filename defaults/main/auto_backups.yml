@@ -1,10 +1,7 @@
-# enable automatic backups, from the host, to the restic remote repo
-enable_automatic_restic_backups: false
-
-# for automatic backups, backup each dir in this list to a snapshot
-automatic_restic_backup_dirs:
-  - '/home/user2/Documents/'
-  - '/home/user2/Templates/'
+# if defined, do automatic daily backup of these dirs from host to remote repo
+# automatic_restic_backup_dirs:
+#   - '/home/user2/Documents/'
+#   - '/home/user2/Templates/'
 
 # for automatic backups, run the daily backup at this hour
 # NOTE: '0' for midnight, '3' for 3 am, '15' for 3 pm, etc
