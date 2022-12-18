@@ -71,7 +71,7 @@ print_usage() {
   echo '  -o, --long-list-snapshot-files'
   echo '      show long listing of all files in latest (or specified) snapshot'
   echo '  -f <file_name>, --find-files-in-snapshots=<file_name>'
-  echo '      search all snapshots and list files matching file_name'
+  echo '      search all snapshots and list matching files (use shell wildcards, partial paths)'
   echo '  -g, --generate-keystring-file'
   echo "      generate password_keystring_file (if not exist) at '{{ default_password_keystring_file_path }}'"
   echo '  -i, --initialize-repo-if-empty'
@@ -559,7 +559,7 @@ do_find_files() {
   fi
 
   try_with_exit \
-    "restic find --long ${file_path_to_find}" \
+    "restic find --long '${file_path_to_find}'" \
     "restic error attempting find files" 5
 }
 
