@@ -402,8 +402,6 @@ export_opts_for_restic_cmds() {
 check_running_as_default_user() {
   if [ "$(id -un)" != "${restic_user_name}" ] && [ "${allow_non_default_user}" = 'false' ]; then
     quit_err_msg_with_help "run this script as user '${restic_user_name}', or use -U to override" 1
-  else
-    quit_err_msg_with_help "test is ok; '${restic_user_name}' is the current user" 1
   fi
 }
 
