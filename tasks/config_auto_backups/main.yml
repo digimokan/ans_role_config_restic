@@ -8,7 +8,7 @@
     state: present
   become: true
   become_user: root
-  when: automatic_restic_backup_dirs is defined
+  when: automatic_restic_backup_dirs | length > 0
 
 - name: "Remove any existing 'restic -a' job from user '{{ restic_user_name }}' crontab"
   ansible.builtin.cron:
@@ -17,5 +17,5 @@
     state: absent
   become: true
   become_user: root
-  when: automatic_restic_backup_dirs is not defined
+  when: automatic_restic_backup_dirs | length == 0
 

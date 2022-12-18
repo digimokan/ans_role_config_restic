@@ -69,7 +69,7 @@ print_usage() {
   echo '  -b, --backup-to-single-snapshot'
   echo '      back up specified backup paths to a snapshot on the remote'
   echo '  -a, --auto-backup-and-rotate-snapshots'
-  echo '      backup to daily snapshot of {{ automatic_restic_backup_dirs }}, and rotate daily/weekly/etc'
+  echo '      backup {{ automatic_restic_backup_dirs }} to daily snapshot, and rotate daily/weekly/etc'
   echo '  -x, --fetch-and-extract-snapshot'
   echo '      fetch specified snapshot (defaults to latest) from remote, extract to working dir'
   echo '  -X <file_name>, --fetch-and-extract-files-in-snapshot=<file_name>'
