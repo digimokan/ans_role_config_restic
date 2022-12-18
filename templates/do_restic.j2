@@ -49,7 +49,7 @@ print_usage() {
   echo "  $(basename "${0}")  -x  [-s <>]         [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]  [-U]"
   echo "  $(basename "${0}")  -d  -s <>    [-n]   [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]  [-U]"
   echo "  $(basename "${0}")  -o  [-s <>]         [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]  [-U]"
-  echo "  $(basename "${0}")  -f <>               [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]  [-U]"
+  echo "  $(basename "${0}")  -f <>  [-s <>]      [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]  [-U]"
   echo "  $(basename "${0}")  -g                  [-P]"
   echo "  $(basename "${0}")  -i                  [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]  [-U]"
   echo "  $(basename "${0}")  --nuke-entire-repo  [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]  [-U]"
@@ -555,11 +555,12 @@ do_find_files() {
     quit_err_msg_with_help "invalid 'dry-run' option" 1
   fi
   if [ "${snapshot_hash_id}" != '' ]; then
-    quit_err_msg_with_help "invalid 'snapshot-hash-id' option" 1
+    snapshot_hash_id="$(echo "${snapshot_hash_id}" | cut -c2-)"
+    snapshot_opt=" --snapshot=${snapshot_hash_id}"
   fi
 
   try_with_exit \
-    "restic find --long '${file_path_to_find}'" \
+    "restic find --long${snapshot_opt} '${file_path_to_find}'" \
     "restic error attempting find files" 5
 }
 
