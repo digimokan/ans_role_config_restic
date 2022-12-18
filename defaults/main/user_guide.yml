@@ -2,3 +2,8 @@
 # NOTE: specify absolute path from root, with leading and trailing '/'
 restic_user_guide_dir: ''
 
+# the user guide is customized for a specific S3-compatible storage provider
+# currently-available customizations:
+#   - wasabi
+restic_user_guide_format: 'wasabi'
+

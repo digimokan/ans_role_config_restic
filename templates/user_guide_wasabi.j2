@@ -1,0 +1,42 @@
+# OVERVIEW
+
+* This machine is configured to encrypt and back up your local files
+  automatically every day.
+* The program on this computer that does the encryption and backup is called
+  restic.
+* The online server that stores the backups is run by a company called Wasabi,
+  at wasabi.com.
+
+# WASABI ACCOUNT INFORMATION
+
+* You should already know your wasabi.com user-name and password.
+* Wasabi charges a monthly fee to store your backups.
+* In your Wasabi account, an S3 "storage bucket" was created to contain all of
+  the backup files.
+* The restic program accesses the storage bucket via these parameters:
+    * RESTIC_REPOSITORY: '{{ restic_s3_bucket_url }}'
+    * AWS_ACCESS_KEY_ID: '{{ restic_s3_bucket_key_id }}'
+    * AWS_SECRET_ACCESS_KEY: '{{ s3_bucket_secret_keystring }}'
+    * RESTIC_PASSWORD: '{{ repo_password_keystring_chars }}'
+* __You need the four parameters above to access your backup files.__
+* __So, print this file and keep it in a safe, secure location.__
+
+# AUTOMATIC BACKUPS
+
+* All your files in the following director(y/ies) will be backed up:
+  {{ automatic_backup_dirs }}
+* The backup will be run automatically every day, at the following hour (0 is
+  midnight, 3 is 0300, 15 is 1500, etc): {{ daily_automatic_backup_hour }}.
+* This machine must be powered on in order for the automatic backup job to run.
+
+# CHECKING BACKUPS
+
+* You may periodically launch the Terminal application and run this command
+  at the command prompt: do_restic.sh -l
+* The command output will show all backups stored on wasabi.com. There should
+  be a daily backup for the last 7 days, a weekly backup for the last month,
+  a monthly backup for the last 12 months, and a yearly backup for each year.
+
+[//]: # vim: set filetype=markdown:
+[//]: # ANSIBLE-MANAGED FILE
+

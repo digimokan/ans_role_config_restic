@@ -1,0 +1,19 @@
+- name: "Select user_guide_src based on storage provider"
+  ansible.builtin.include_tasks: select_user_guide_src.yml
+
+- name: "Store repo-password-keystring in a var, for inclusion in user guide"
+  ansible.builtin.set_fact:
+    repo_password_keystring_chars: "{{ lookup('ansible.builtin.file', default_password_keystring_file_path) }}"
+
+- name: "Create restic user guide at {{ user_guide_path }}"
+  ansible.builtin.template:
+    dest: "{{ user_guide_path }}"
+    src: "{{ user_guide_src }}"
+    owner: "{{ restic_user_name }}"
+    mode: '666'
+    force: yes
+  vars:
+    user_guide_path: "{{ restic_user_guide_dir }}restic_user_guide.md"
+  become: true
+  become_user: root
+
