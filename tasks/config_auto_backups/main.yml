@@ -1,0 +1,21 @@
+- name: "Configure user '{{ restic_user_name }}' crontab to run 'restic -a' daily, at hour of {{ daily_automatic_backup_hour }}"
+  ansible.builtin.cron:
+    name: 'restic auto-backup'
+    hour: "{{ daily_automatic_backup_hour }}"
+    minute: '0'
+    user: "{{ restic_user_name }}"
+    job: '/usr/local/bin/do_restic.sh --auto-backup-and-rotate-snapshots'
+    state: present
+  become: true
+  become_user: root
+  when: automatic_restic_backup_dirs is defined
+
+- name: "Remove any existing 'restic -a' job from user '{{ restic_user_name }}' crontab"
+  ansible.builtin.cron:
+    name: 'restic auto-backup'
+    user: "{{ restic_user_name }}"
+    state: absent
+  become: true
+  become_user: root
+  when: automatic_restic_backup_dirs is not defined
+

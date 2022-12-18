@@ -5,5 +5,5 @@
 
 # for automatic backups, run the daily backup at this hour
 # NOTE: '0' for midnight, '3' for 3 am, '15' for 3 pm, etc
-daily_automatic_restic_backup_hour: '3'
+daily_automatic_backup_hour: '3'
 
