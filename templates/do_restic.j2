@@ -26,6 +26,7 @@ repo_pass_cmd=''
 s3_bucket_url='{{ restic_s3_bucket_url }}'
 s3_bucket_key_id='{{ restic_s3_bucket_key_id }}'
 s3_bucket_secret_keystring='{{ restic_s3_bucket_secret_keystring }}'
+allow_non_default_user='false'
 snapshot_hash_id=''
 local_backup_paths=''
 dry_run=''
@@ -34,19 +35,20 @@ dry_run=''
 repo_pass_cmd_file_path='{{ default_pass_cmd_file_path }}'
 password_keystring_length='32'
 snapshot_compression_level='max'
+restic_user_name='{{ restic_user_name }}'
 
 print_usage() {
   echo 'USAGE:'
   echo "  $(basename "${0}")  -h"
-  echo "  $(basename "${0}")  -l                  [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]"
-  echo "  $(basename "${0}")  -t  [-s <>]         [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]"
-  echo "  $(basename "${0}")  -b  -p <>    [-n]   [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]"
-  echo "  $(basename "${0}")  -a           [-n]   [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]"
-  echo "  $(basename "${0}")  -x  [-s <>]         [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]"
-  echo "  $(basename "${0}")  -d  -s <>    [-n]   [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]"
+  echo "  $(basename "${0}")  -l                  [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]  [-U]"
+  echo "  $(basename "${0}")  -t  [-s <>]         [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]  [-U]"
+  echo "  $(basename "${0}")  -b  -p <>    [-n]   [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]  [-U]"
+  echo "  $(basename "${0}")  -a           [-n]   [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]  [-U]"
+  echo "  $(basename "${0}")  -x  [-s <>]         [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]  [-U]"
+  echo "  $(basename "${0}")  -d  -s <>    [-n]   [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]  [-U]"
   echo "  $(basename "${0}")  -g                  [-P]"
-  echo "  $(basename "${0}")  -i                  [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]"
-  echo "  $(basename "${0}")  --nuke-entire-repo  [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]"
+  echo "  $(basename "${0}")  -i                  [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]  [-U]"
+  echo "  $(basename "${0}")  --nuke-entire-repo  [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]  [-U]"
   echo 'OPTIONS:'
   echo '  -h, --help'
   echo '      print this help message'
@@ -83,6 +85,8 @@ print_usage() {
   echo "      remote S3 bucket access key ID (default '{{ restic_s3_bucket_key_id }}')"
   echo '  -K <secret_key_string>, --remote-bucket-secret-key-string=<secret_key_string>'
   echo "      remote S3 bucket secret key string (default '{{ restic_s3_bucket_secret_keystring }}')"
+  echo '  -U, --allow-non-default-user'
+  echo "      restic ops should be done as user '{{ restic_user_name }}', but this overrides"
   echo '  --nuke-entire-repo'
   echo '      wipe out contents of entire repo (but leave it initialized)'
   echo 'EXIT CODES:'
@@ -95,7 +99,7 @@ print_usage() {
 }
 
 get_cmd_opts() {
-  while getopts ':hltbaxdgis:p:nP:M:L:I:K:-:' option; do
+  while getopts ':hltbaxdgis:p:nP:M:L:I:K:U-:' option; do
     case "${option}" in
       h)  handle_help ;;
       l)  handle_list_snapshots ;;
@@ -114,6 +118,7 @@ get_cmd_opts() {
       L)  handle_remote_bucket_url "${OPTARG}" ;;
       I)  handle_remote_bucket_key_id "${OPTARG}" ;;
       K)  handle_remote_bucket_secret_key_string "${OPTARG}" ;;
+      U)  handle_allow_non_default_user ;;
       -)  LONG_OPTARG="${OPTARG#*=}"
           case ${OPTARG} in
             help)                                 handle_help ;;
@@ -152,6 +157,8 @@ get_cmd_opts() {
             remote-bucket-key-id*)                handle_missing_option_arg "${OPTARG}" ;;
             remote-bucket-secret-key-string=?*)   handle_remote_bucket_secret_key_string "${LONG_OPTARG}" ;;
             remote-bucket-secret-key-string*)     handle_missing_option_arg "${OPTARG}" ;;
+            allow-non-default-user)               handle_allow_non_default_user ;;
+            allow-non-default-user=*)             handle_illegal_option_arg "${OPTARG}" ;;
             '')                                   break ;; # non-option arg starting with '-'
             *)                                    handle_unknown_option "${OPTARG}" ;;
           esac ;;
@@ -356,6 +363,10 @@ handle_remote_bucket_secret_key_string() {
   s3_bucket_secret_keystring="${1}"
 }
 
+handle_allow_non_default_user() {
+  allow_non_default_user='true'
+}
+
 handle_unknown_option() {
   err_msg="unknown option \"${1}\""
   quit_err_msg_with_help "${err_msg}" 1
@@ -386,6 +397,14 @@ export_opts_for_restic_cmds() {
   export RESTIC_REPOSITORY="${s3_bucket_url}"
   export AWS_ACCESS_KEY_ID="${s3_bucket_key_id}"
   export AWS_SECRET_ACCESS_KEY="${s3_bucket_secret_keystring}"
+}
+
+check_running_as_default_user() {
+  if [ "$(id -un)" != "${restic_user_name}" ] && [ "${allow_non_default_user}" = 'false' ]; then
+    quit_err_msg_with_help "run this script as user '${restic_user_name}', or use -U to override" 1
+  else
+    quit_err_msg_with_help "test is ok; '${restic_user_name}' is the current user" 1
+  fi
 }
 
 do_list_snapshots() {
@@ -496,6 +515,7 @@ do_nuke_entire_repo() {
 main() {
   get_cmd_opts "$@"
   export_opts_for_restic_cmds "$@"
+  check_running_as_default_user "$@"
   if [ "${list_snapshots}" = 'true' ]; then
     do_list_snapshots "$@"
   elif [ "${list_snapshot_details}" = 'true' ]; then
