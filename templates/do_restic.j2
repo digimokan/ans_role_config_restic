@@ -12,6 +12,7 @@
 # User Options And Option-Args
 list_snapshots='false'
 list_snapshot_details='false'
+check_repo_for_errors='false'
 backup_to_single_snapshot='false'
 auto_backup_and_rotate_snapshots='false'
 extract_snapshot='false'
@@ -45,6 +46,7 @@ print_usage() {
   echo "  $(basename "${0}")  -h"
   echo "  $(basename "${0}")  -l                  [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]  [-U]"
   echo "  $(basename "${0}")  -t  [-s <>]         [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]  [-U]"
+  echo "  $(basename "${0}")  -c                  [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]  [-U]"
   echo "  $(basename "${0}")  -b  -p <>    [-n]   [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]  [-U]"
   echo "  $(basename "${0}")  -a           [-n]   [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]  [-U]"
   echo "  $(basename "${0}")  -x  [-s <>]         [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]  [-U]"
@@ -62,6 +64,8 @@ print_usage() {
   echo '      list all created snapshots'
   echo '  -t, --list-snapshot-details'
   echo '      list compressed sizes for all created snapshots, or specified snapshot'
+  echo '  -c, --check-repo-for-errors'
+  echo '      check remote repo for any errors'
   echo '  -b, --backup-to-single-snapshot'
   echo '      back up specified backup paths to a snapshot on the remote'
   echo '  -a, --auto-backup-and-rotate-snapshots'
@@ -111,11 +115,12 @@ print_usage() {
 }
 
 get_cmd_opts() {
-  while getopts ':hltbaxX:dof:gis:p:nP:M:L:I:K:U-:' option; do
+  while getopts ':hltcbaxX:dof:gis:p:nP:M:L:I:K:U-:' option; do
     case "${option}" in
       h)  handle_help ;;
       l)  handle_list_snapshots ;;
       t)  handle_list_snapshot_details ;;
+      c)  handle_check_repo_for_errors ;;
       b)  handle_backup_to_single_snapshot ;;
       a)  handle_auto_backup_and_rotate_snapshots ;;
       x)  handle_fetch_and_extract_snapshot ;;
@@ -142,6 +147,8 @@ get_cmd_opts() {
             list-snapshots=*)                       handle_illegal_option_arg "${OPTARG}" ;;
             list-snapshot-details)                  handle_list_snapshot_details ;;
             list-snapshot-details=*)                handle_illegal_option_arg "${OPTARG}" ;;
+            check-repo-for-errors)                  handle_check_repo_for_errors ;;
+            check-repo-for-errors=*)                handle_illegal_option_arg "${OPTARG}" ;;
             backup-to-single-snapshot)              handle_backup_to_single_snapshot ;;
             backup-to-single-snapshot=*)            handle_illegal_option_arg "${OPTARG}" ;;
             auto-backup-and-rotate-snapshots)       handle_auto_backup_and_rotate_snapshots ;;
@@ -216,6 +223,7 @@ try_with_exit() {
 
 handle_list_snapshots() {
   if [ "${list_snapshot_details}" = 'true' ] || \
+     [ "${check_repo_for_errors}" = 'true' ] || \
      [ "${backup_to_single_snapshot}" = 'true' ] || \
      [ "${auto_backup_and_rotate_snapshots}" = 'true' ] || \
      [ "${extract_snapshot}" = 'true' ] || \
@@ -233,6 +241,7 @@ handle_list_snapshots() {
 
 handle_list_snapshot_details() {
   if [ "${list_snapshots}" = 'true' ] || \
+     [ "${check_repo_for_errors}" = 'true' ] || \
      [ "${backup_to_single_snapshot}" = 'true' ] || \
      [ "${auto_backup_and_rotate_snapshots}" = 'true' ] || \
      [ "${extract_snapshot}" = 'true' ] || \
@@ -248,9 +257,28 @@ handle_list_snapshot_details() {
   list_snapshot_details='true'
 }
 
+handle_check_repo_for_errors() {
+  if [ "${list_snapshots}" = 'true' ] || \
+     [ "${list_snapshot_details}" = 'true' ] || \
+     [ "${backup_to_single_snapshot}" = 'true' ] || \
+     [ "${auto_backup_and_rotate_snapshots}" = 'true' ] || \
+     [ "${extract_snapshot}" = 'true' ] || \
+     [ "${extract_files_in_snapshot}" = 'true' ] || \
+     [ "${delete_snapshot}" = 'true' ] || \
+     [ "${long_list_snapshot_files}" = 'true' ] || \
+     [ "${find_files}" = 'true' ] || \
+     [ "${generate_keystring_file}" = 'true' ] || \
+     [ "${initialize_repo_if_empty}" = 'true' ] || \
+     [ "${nuke_entire_repo}" = 'true' ]; then
+    quit_err_msg_with_help "mutually exclusive options selected" 1
+  fi
+  check_repo_for_errors='true'
+}
+
 handle_backup_to_single_snapshot() {
   if [ "${list_snapshots}" = 'true' ] || \
      [ "${list_snapshot_details}" = 'true' ] || \
+     [ "${check_repo_for_errors}" = 'true' ] || \
      [ "${auto_backup_and_rotate_snapshots}" = 'true' ] || \
      [ "${extract_snapshot}" = 'true' ] || \
      [ "${extract_files_in_snapshot}" = 'true' ] || \
@@ -268,6 +296,7 @@ handle_backup_to_single_snapshot() {
 handle_auto_backup_and_rotate_snapshots() {
   if [ "${list_snapshots}" = 'true' ] || \
      [ "${list_snapshot_details}" = 'true' ] || \
+     [ "${check_repo_for_errors}" = 'true' ] || \
      [ "${backup_to_single_snapshot}" = 'true' ] || \
      [ "${extract_snapshot}" = 'true' ] || \
      [ "${extract_files_in_snapshot}" = 'true' ] || \
@@ -285,6 +314,7 @@ handle_auto_backup_and_rotate_snapshots() {
 handle_fetch_and_extract_snapshot() {
   if [ "${list_snapshots}" = 'true' ] || \
      [ "${list_snapshot_details}" = 'true' ] || \
+     [ "${check_repo_for_errors}" = 'true' ] || \
      [ "${backup_to_single_snapshot}" = 'true' ] || \
      [ "${auto_backup_and_rotate_snapshots}" = 'true' ] || \
      [ "${extract_files_in_snapshot}" = 'true' ] || \
@@ -302,6 +332,7 @@ handle_fetch_and_extract_snapshot() {
 handle_fetch_and_extract_files_in_snapshot() {
   if [ "${list_snapshots}" = 'true' ] || \
      [ "${list_snapshot_details}" = 'true' ] || \
+     [ "${check_repo_for_errors}" = 'true' ] || \
      [ "${backup_to_single_snapshot}" = 'true' ] || \
      [ "${auto_backup_and_rotate_snapshots}" = 'true' ] || \
      [ "${extract_snapshot}" = 'true' ] || \
@@ -320,6 +351,7 @@ handle_fetch_and_extract_files_in_snapshot() {
 handle_delete_snapshot() {
   if [ "${list_snapshots}" = 'true' ] || \
      [ "${list_snapshot_details}" = 'true' ] || \
+     [ "${check_repo_for_errors}" = 'true' ] || \
      [ "${backup_to_single_snapshot}" = 'true' ] || \
      [ "${auto_backup_and_rotate_snapshots}" = 'true' ] || \
      [ "${extract_snapshot}" = 'true' ] || \
@@ -337,6 +369,7 @@ handle_delete_snapshot() {
 handle_long_list_snapshot_files() {
   if [ "${list_snapshots}" = 'true' ] || \
      [ "${list_snapshot_details}" = 'true' ] || \
+     [ "${check_repo_for_errors}" = 'true' ] || \
      [ "${backup_to_single_snapshot}" = 'true' ] || \
      [ "${auto_backup_and_rotate_snapshots}" = 'true' ] || \
      [ "${extract_snapshot}" = 'true' ] || \
@@ -354,6 +387,7 @@ handle_long_list_snapshot_files() {
 handle_find_files() {
   if [ "${list_snapshots}" = 'true' ] || \
      [ "${list_snapshot_details}" = 'true' ] || \
+     [ "${check_repo_for_errors}" = 'true' ] || \
      [ "${backup_to_single_snapshot}" = 'true' ] || \
      [ "${auto_backup_and_rotate_snapshots}" = 'true' ] || \
      [ "${extract_snapshot}" = 'true' ] || \
@@ -372,6 +406,7 @@ handle_find_files() {
 handle_generate_keystring_file() {
   if [ "${list_snapshots}" = 'true' ] || \
      [ "${list_snapshot_details}" = 'true' ] || \
+     [ "${check_repo_for_errors}" = 'true' ] || \
      [ "${backup_to_single_snapshot}" = 'true' ] || \
      [ "${auto_backup_and_rotate_snapshots}" = 'true' ] || \
      [ "${extract_snapshot}" = 'true' ] || \
@@ -389,6 +424,7 @@ handle_generate_keystring_file() {
 handle_initialize_repo_if_empty() {
   if [ "${list_snapshots}" = 'true' ] || \
      [ "${list_snapshot_details}" = 'true' ] || \
+     [ "${check_repo_for_errors}" = 'true' ] || \
      [ "${backup_to_single_snapshot}" = 'true' ] || \
      [ "${auto_backup_and_rotate_snapshots}" = 'true' ] || \
      [ "${extract_snapshot}" = 'true' ] || \
@@ -406,6 +442,7 @@ handle_initialize_repo_if_empty() {
 handle_nuke_entire_repo() {
   if [ "${list_snapshots}" = 'true' ] || \
      [ "${list_snapshot_details}" = 'true' ] || \
+     [ "${check_repo_for_errors}" = 'true' ] || \
      [ "${backup_to_single_snapshot}" = 'true' ] || \
      [ "${auto_backup_and_rotate_snapshots}" = 'true' ] || \
      [ "${extract_snapshot}" = 'true' ] || \
@@ -516,6 +553,12 @@ do_list_snapshot_details() {
   try_with_exit \
     "restic stats --mode=raw-data${snapshot_hash_id}" \
     "restic error attempting to list snapshot details" 5
+}
+
+do_check_repo_for_errors() {
+  try_with_exit \
+    "restic --verbose check" \
+    "restic error attempting to check repo for errors" 5
 }
 
 do_backup_to_single_snapshot() {
@@ -659,6 +702,8 @@ main() {
     do_list_snapshots "$@"
   elif [ "${list_snapshot_details}" = 'true' ]; then
     do_list_snapshot_details "$@"
+  elif [ "${check_repo_for_errors}" = 'true' ]; then
+    do_check_repo_for_errors "$@"
   elif [ "${backup_to_single_snapshot}" = 'true' ]; then
     do_backup_to_single_snapshot "$@"
   elif [ "${auto_backup_and_rotate_snapshots}" = 'true' ]; then
