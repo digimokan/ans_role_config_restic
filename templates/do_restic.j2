@@ -17,6 +17,7 @@ auto_backup_and_rotate_snapshots='false'
 extract_snapshot='false'
 delete_snapshot='false'
 generate_keystring_file='false'
+long_list_snapshot_files='false'
 initialize_repo_if_empty='false'
 nuke_entire_repo='false'
 set_repo_password_keystring_file_path='false'
@@ -46,6 +47,7 @@ print_usage() {
   echo "  $(basename "${0}")  -a           [-n]   [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]  [-U]"
   echo "  $(basename "${0}")  -x  [-s <>]         [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]  [-U]"
   echo "  $(basename "${0}")  -d  -s <>    [-n]   [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]  [-U]"
+  echo "  $(basename "${0}")  -o  [-s <>]         [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]  [-U]"
   echo "  $(basename "${0}")  -g                  [-P]"
   echo "  $(basename "${0}")  -i                  [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]  [-U]"
   echo "  $(basename "${0}")  --nuke-entire-repo  [-P|-M <>]  [-L <>]  [-I <>]  [-K <>]  [-C <>]  [-U]"
@@ -64,6 +66,8 @@ print_usage() {
   echo '      fetch specified snapshot (defaults to latest) from remote, extract to working dir'
   echo '  -d, --delete-snapshot'
   echo '      delete specified snapshot from remote'
+  echo '  -o, --long-list-snapshot-files'
+  echo '      show long listing of all files in latest (or specified) snapshot'
   echo '  -g, --generate-keystring-file'
   echo "      generate password_keystring_file (if not exist) at '{{ default_password_keystring_file_path }}'"
   echo '  -i, --initialize-repo-if-empty'
@@ -99,7 +103,7 @@ print_usage() {
 }
 
 get_cmd_opts() {
-  while getopts ':hltbaxdgis:p:nP:M:L:I:K:U-:' option; do
+  while getopts ':hltbaxdogis:p:nP:M:L:I:K:U-:' option; do
     case "${option}" in
       h)  handle_help ;;
       l)  handle_list_snapshots ;;
@@ -108,6 +112,7 @@ get_cmd_opts() {
       a)  handle_auto_backup_and_rotate_snapshots ;;
       x)  handle_fetch_and_extract_snapshot ;;
       d)  handle_delete_snapshot ;;
+      o)  handle_long_list_snapshot_files ;;
       g)  handle_generate_keystring_file ;;
       i)  handle_initialize_repo_if_empty ;;
       s)  handle_snapshot_hash_id "${OPTARG}" ;;
@@ -135,6 +140,8 @@ get_cmd_opts() {
             fetch-and-extract-snapshot=*)         handle_illegal_option_arg "${OPTARG}" ;;
             delete-snapshot)                      handle_delete_snapshot ;;
             delete-snapshot=*)                    handle_illegal_option_arg "${OPTARG}" ;;
+            long-list-snapshot-files)             handle_long_list_snapshot_files ;;
+            long-list-snapshot-files=*)           handle_illegal_option_arg "${OPTARG}" ;;
             generate-keystring-file)              handle_generate_keystring_file ;;
             generate-keystring-file=*)            handle_illegal_option_arg "${OPTARG}" ;;
             initialize-repo-if-empty)             handle_initialize_repo_if_empty ;;
@@ -199,6 +206,7 @@ handle_list_snapshots() {
      [ "${auto_backup_and_rotate_snapshots}" = 'true' ] || \
      [ "${extract_snapshot}" = 'true' ] || \
      [ "${delete_snapshot}" = 'true' ] || \
+     [ "${long_list_snapshot_files}" = 'true' ] || \
      [ "${generate_keystring_file}" = 'true' ] || \
      [ "${initialize_repo_if_empty}" = 'true' ] || \
      [ "${nuke_entire_repo}" = 'true' ]; then
@@ -213,6 +221,7 @@ handle_list_snapshot_details() {
      [ "${auto_backup_and_rotate_snapshots}" = 'true' ] || \
      [ "${extract_snapshot}" = 'true' ] || \
      [ "${delete_snapshot}" = 'true' ] || \
+     [ "${long_list_snapshot_files}" = 'true' ] || \
      [ "${generate_keystring_file}" = 'true' ] || \
      [ "${initialize_repo_if_empty}" = 'true' ] || \
      [ "${nuke_entire_repo}" = 'true' ]; then
@@ -227,6 +236,7 @@ handle_backup_to_single_snapshot() {
      [ "${auto_backup_and_rotate_snapshots}" = 'true' ] || \
      [ "${extract_snapshot}" = 'true' ] || \
      [ "${delete_snapshot}" = 'true' ] || \
+     [ "${long_list_snapshot_files}" = 'true' ] || \
      [ "${generate_keystring_file}" = 'true' ] || \
      [ "${initialize_repo_if_empty}" = 'true' ] || \
      [ "${nuke_entire_repo}" = 'true' ]; then
@@ -241,6 +251,7 @@ handle_auto_backup_and_rotate_snapshots() {
      [ "${backup_to_single_snapshot}" = 'true' ] || \
      [ "${extract_snapshot}" = 'true' ] || \
      [ "${delete_snapshot}" = 'true' ] || \
+     [ "${long_list_snapshot_files}" = 'true' ] || \
      [ "${generate_keystring_file}" = 'true' ] || \
      [ "${initialize_repo_if_empty}" = 'true' ] || \
      [ "${nuke_entire_repo}" = 'true' ]; then
@@ -255,6 +266,7 @@ handle_fetch_and_extract_snapshot() {
      [ "${backup_to_single_snapshot}" = 'true' ] || \
      [ "${auto_backup_and_rotate_snapshots}" = 'true' ] || \
      [ "${delete_snapshot}" = 'true' ] || \
+     [ "${long_list_snapshot_files}" = 'true' ] || \
      [ "${generate_keystring_file}" = 'true' ] || \
      [ "${initialize_repo_if_empty}" = 'true' ] || \
      [ "${nuke_entire_repo}" = 'true' ]; then
@@ -269,12 +281,28 @@ handle_delete_snapshot() {
      [ "${backup_to_single_snapshot}" = 'true' ] || \
      [ "${auto_backup_and_rotate_snapshots}" = 'true' ] || \
      [ "${extract_snapshot}" = 'true' ] || \
+     [ "${long_list_snapshot_files}" = 'true' ] || \
      [ "${generate_keystring_file}" = 'true' ] || \
      [ "${initialize_repo_if_empty}" = 'true' ] || \
      [ "${nuke_entire_repo}" = 'true' ]; then
     quit_err_msg_with_help "mutually exclusive options selected" 1
   fi
   delete_snapshot='true'
+}
+
+handle_long_list_snapshot_files() {
+  if [ "${list_snapshots}" = 'true' ] || \
+     [ "${list_snapshot_details}" = 'true' ] || \
+     [ "${backup_to_single_snapshot}" = 'true' ] || \
+     [ "${auto_backup_and_rotate_snapshots}" = 'true' ] || \
+     [ "${extract_snapshot}" = 'true' ] || \
+     [ "${delete_snapshot}" = 'true' ] || \
+     [ "${generate_keystring_file}" = 'true' ] || \
+     [ "${initialize_repo_if_empty}" = 'true' ] || \
+     [ "${nuke_entire_repo}" = 'true' ]; then
+    quit_err_msg_with_help "mutually exclusive options selected" 1
+  fi
+  long_list_snapshot_files='true'
 }
 
 handle_generate_keystring_file() {
@@ -284,6 +312,7 @@ handle_generate_keystring_file() {
      [ "${auto_backup_and_rotate_snapshots}" = 'true' ] || \
      [ "${extract_snapshot}" = 'true' ] || \
      [ "${delete_snapshot}" = 'true' ] || \
+     [ "${long_list_snapshot_files}" = 'true' ] || \
      [ "${initialize_repo_if_empty}" = 'true' ] || \
      [ "${nuke_entire_repo}" = 'true' ]; then
     quit_err_msg_with_help "mutually exclusive options selected" 1
@@ -298,6 +327,7 @@ handle_initialize_repo_if_empty() {
      [ "${auto_backup_and_rotate_snapshots}" = 'true' ] || \
      [ "${extract_snapshot}" = 'true' ] || \
      [ "${delete_snapshot}" = 'true' ] || \
+     [ "${long_list_snapshot_files}" = 'true' ] || \
      [ "${generate_keystring_file}" = 'true' ] || \
      [ "${nuke_entire_repo}" = 'true' ]; then
     quit_err_msg_with_help "mutually exclusive options selected" 1
@@ -312,6 +342,7 @@ handle_nuke_entire_repo() {
      [ "${auto_backup_and_rotate_snapshots}" = 'true' ] || \
      [ "${extract_snapshot}" = 'true' ] || \
      [ "${delete_snapshot}" = 'true' ] || \
+     [ "${long_list_snapshot_files}" = 'true' ] || \
      [ "${generate_keystring_file}" = 'true' ] || \
      [ "${initialize_repo_if_empty}" = 'true' ]; then
     quit_err_msg_with_help "mutually exclusive options selected" 1
@@ -472,6 +503,19 @@ do_delete_snapshot() {
     "restic error attempting to delete snapshot" 5
 }
 
+do_long_list_snapshot_files() {
+  if [ "${dry_run}" != '' ]; then
+    quit_err_msg_with_help "invalid 'dry-run' option" 1
+  fi
+  if [ "${snapshot_hash_id}" = '' ]; then
+    snapshot_hash_id=' latest'
+  fi
+
+  try_with_exit \
+    "restic ls --long${snapshot_hash_id}" \
+    "restic error attempting long-list files in snapshot" 5
+}
+
 do_generate_keystring_file() {
   if [ "${dry_run}" != '' ]; then
     quit_err_msg_with_help "invalid 'dry-run' option" 1
@@ -526,6 +570,8 @@ main() {
     do_extract_snapshot "$@"
   elif [ "${delete_snapshot}" = 'true' ]; then
     do_delete_snapshot "$@"
+  elif [ "${long_list_snapshot_files}" = 'true' ]; then
+    do_long_list_snapshot_files "$@"
   elif [ "${generate_keystring_file}" = 'true' ]; then
     do_generate_keystring_file "$@"
   elif [ "${initialize_repo_if_empty}" = 'true' ]; then
