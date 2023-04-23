@@ -31,10 +31,10 @@ Install the restic backup program, and configure backups to a remote repo.
   [bucket](https://restic.readthedocs.io/en/latest/030_preparing_a_new_repo.html#amazon-s3).
 * The remote S3 bucket holds a [restic repo](https://restic.readthedocs.io/en/latest/030_preparing_a_new_repo.html).
 * The remote repo is accessed via these credentials:
-      * [`RESTIC_REPOSITORY`](../defaults/main/remote_repo.yml)
-      * [`AWS_ACCESS_KEY_ID`](../defaults/main/remote_repo.yml)
-      * [`AWS_SECRET_ACCESS_KEY`](../defaults/main/remote_repo.yml)
-      * [repo password keystring](../defaults/main/remote_repo.yml)
+    * [`RESTIC_REPOSITORY`](../defaults/main/remote_repo.yml)
+    * [`AWS_ACCESS_KEY_ID`](../defaults/main/remote_repo.yml)
+    * [`AWS_SECRET_ACCESS_KEY`](../defaults/main/remote_repo.yml)
+    * [repo password keystring](../defaults/main/remote_repo.yml)
 * On the remote, a repo can be [initialized only once](https://forum.restic.net/t/restoring-on-a-new-host/1182).
 * Once initialized, the most you can do is [wipeout all snapshots](https://github.com/restic/restic/issues/1977#issuecomment-417393284).
 * Initializing the repo takes a [keystring as input](https://restic.readthedocs.io/en/latest/030_preparing_a_new_repo.html#local).
