@@ -20,6 +20,7 @@
     dest: "{{ user_guide_path }}"
     src: "{{ user_guide_src }}"
     owner: "{{ restic_user_name }}"
+    group: "{{ restic_user_name }}"
     mode: '666'
     force: yes
   vars:
