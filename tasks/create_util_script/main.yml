@@ -4,7 +4,7 @@
     src: "do_restic.j2"
     owner: 'root'
     mode: '755'
-    force: yes
+    force: true
   become: true
   become_user: root
 

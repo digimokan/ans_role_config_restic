@@ -22,7 +22,7 @@
     owner: "{{ restic_user_name }}"
     group: "{{ restic_user_name }}"
     mode: '666'
-    force: yes
+    force: true
   vars:
     user_guide_path: "{{ restic_user_guide_dir }}restic_user_guide.md"
   become: true

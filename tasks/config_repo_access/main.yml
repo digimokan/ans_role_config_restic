@@ -4,7 +4,7 @@
     src: "default_pass_cmd.j2"
     owner: "{{ restic_user_name }}"
     mode: '544'
-    force: yes
+    force: true
   become: true
   become_user: root
   when: default_pass_cmd is defined
