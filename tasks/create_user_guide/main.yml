@@ -15,12 +15,9 @@
   ansible.builtin.template:
     dest: "{{ user_guide_path }}"
     src: "{{ user_guide_src }}"
-    owner: "{{ restic_user_name }}"
-    group: "{{ restic_user_name }}"
-    mode: '666'
     force: true
   vars:
     user_guide_path: "{{ restic_user_guide_dir }}restic_user_guide.md"
   become: true
-  become_user: root
+  become_user: "{{ restic_user_name }}"
 

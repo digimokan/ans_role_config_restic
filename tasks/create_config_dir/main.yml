@@ -2,10 +2,8 @@
   ansible.builtin.file:
     path: "{{ restic_config_dir }}"
     state: directory
-    owner: "{{ restic_user_name }}"
-    mode: '755'
   vars:
     restic_config_dir: "{{ default_password_keystring_file_path | dirname }}/restic"
   become: true
-  become_user: root
+  become_user: "{{ restic_user_name }}"
 

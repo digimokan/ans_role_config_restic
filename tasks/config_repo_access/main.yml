@@ -2,10 +2,9 @@
   ansible.builtin.template:
     dest: "{{ default_pass_cmd_file_path }}"
     src: "default_pass_cmd.j2"
-    owner: "{{ restic_user_name }}"
-    mode: '544'
     force: true
   become: true
   become_user: root
+  become_user: "{{ restic_user_name }}"
   when: default_pass_cmd is defined
 
