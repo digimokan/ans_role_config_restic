@@ -1,3 +1,27 @@
+- name: "Check if repo-password-keystring-file exists"
+  ansible.builtin.stat:
+    path: "{{ default_password_keystring_file_path }}"
+  register: password_keystring_file_stat_result
+
+- name: "Check if get-pass-cmd-file exists"
+  ansible.builtin.stat:
+    path: "{{ default_pass_cmd_file_path }}"
+  register: get_pass_cmd_file_stat_result
+
+- name: "Check that repo-password-keystring-file OR get-pass-cmd-file exists"
+  ansible.builtin.assert:
+    that: [ (password_keystring_file_stat_result.stat.exists) or
+            (get_pass_cmd_file_stat_result.stat.exists) ]
+    fail_msg: "at least one file must exist"
+    quiet: true
+
+- name: "Check BOTH repo-password-keystring-file and get-pass-cmd-file do not exist"
+  ansible.builtin.assert:
+    that: [ not ((password_keystring_file_stat_result.stat.exists) and
+                 (get_pass_cmd_file_stat_result.stat.exists)) ]
+    fail_msg: "both files should not exist"
+    quiet: true
+
 - name: "Create '/usr/local/bin/do_restic.sh' utility script"
   ansible.builtin.template:
     dest: "/usr/local/bin/do_restic.sh"
