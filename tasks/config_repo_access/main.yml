@@ -4,7 +4,6 @@
     src: "default_pass_cmd.j2"
     force: true
   become: true
-  become_user: root
   become_user: "{{ restic_user_name }}"
   when: default_pass_cmd is defined
 
