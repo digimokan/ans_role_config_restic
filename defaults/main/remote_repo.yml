@@ -20,5 +20,6 @@ default_pass_cmd_file_path: "/home/{{ restic_user_name }}/.config/restic/default
 #      keystring in `default_password_keystring_file_path`.
 #   3. If neither file is present, or if overriding the files is desired,
 #      the script can be invoked with the `-P` or `-M` options.
+# Note: single or double quotes are NOT allowed in this string
 # default_pass_cmd: 'pass -c restic_user1'
 
