@@ -1,11 +1,11 @@
 - name: "Install restic application"
   ansible.builtin.include_tasks: install_app/main.yml
 
-- name: "Configure remote repo access"
-  ansible.builtin.include_tasks: config_repo_access/main.yml
-
 - name: "Create restic config dir"
   ansible.builtin.include_tasks: create_config_dir/main.yml
+
+- name: "Configure remote repo access"
+  ansible.builtin.include_tasks: config_repo_access/main.yml
 
 - name: "Create restic utility script"
   ansible.builtin.include_tasks: create_util_script/main.yml
