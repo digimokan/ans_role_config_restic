@@ -216,8 +216,11 @@ try_with_exit() {
   cmd="${1}"
   err_msg="${2}"
   err_code="${3}"
-  echo "Executing cmd: '${cmd}'..."
-  eval "${cmd}"
+  echo "Executing cmd: '${cmd}'..." > /tmp/restic_run_log.txt
+  # eval "${cmd}"
+  # TESTING!!!!!!!!!!!!
+  eval "${cmd}" 1> /tmp/restic_run_log.txt 2>&1
+
   exit_code="${?}"
   if [ "${exit_code}" != 0 ]; then
     # TESTING!!
