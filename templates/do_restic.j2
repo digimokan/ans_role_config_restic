@@ -548,7 +548,7 @@ export_opts_for_restic_cmds() {
   elif [ "${generate_keystring_file}" = 'false' ]; then
     quit_err_msg_with_help "no keystring_file or repo_pass_cmd specified" 1
   fi
-  restic_cmd_and_args="restic ${restic_args}\""
+  restic_cmd_and_args="restic ${restic_args}"
 
   export RESTIC_REPOSITORY="${s3_bucket_url}"
   export AWS_ACCESS_KEY_ID="${s3_bucket_key_id}"
