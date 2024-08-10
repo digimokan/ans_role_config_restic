@@ -536,15 +536,19 @@ export_opts_for_restic_cmds() {
   echo "export_opts_for_restic_cmds repo_pass_cmd_file_path: ${repo_pass_cmd_file_path}" >> /tmp/restic_run_log.txt
 
   if [ "${repo_pass_cmd}" != '' ]; then
-    export RESTIC_PASSWORD_COMMAND="${repo_pass_cmd}"
+    # export RESTIC_PASSWORD_COMMAND="${repo_pass_cmd}"
+    restic_args="--password-command=\"${repo_pass_cmd}\""
   elif [ -f "${repo_pass_cmd_file_path}" ]; then
-    RESTIC_PASSWORD_COMMAND="$(cat "${repo_pass_cmd_file_path}")"
-    export RESTIC_PASSWORD_COMMAND
+    # RESTIC_PASSWORD_COMMAND="$(cat "${repo_pass_cmd_file_path}")"
+    # export RESTIC_PASSWORD_COMMAND
+    restic_args="--password-command=\"$(cat "${repo_pass_cmd_file_path}")\""
   elif [ -f "${repo_password_keystring_file_path}" ]; then
-    export RESTIC_PASSWORD_FILE="${repo_password_keystring_file_path}"
+    # export RESTIC_PASSWORD_FILE="${repo_password_keystring_file_path}"
+    restic_args="--password-file=\"${repo_password_keystring_file_path}\""
   elif [ "${generate_keystring_file}" = 'false' ]; then
     quit_err_msg_with_help "no keystring_file or repo_pass_cmd specified" 1
   fi
+  restic_cmd_and_args="restic ${restic_args}\""
 
   export RESTIC_REPOSITORY="${s3_bucket_url}"
   export AWS_ACCESS_KEY_ID="${s3_bucket_key_id}"
@@ -561,19 +565,19 @@ check_running_as_default_user() {
 
 do_list_snapshots() {
   try_with_exit \
-    "restic snapshots" \
+    "${restic_cmd_and_args} snapshots" \
     "restic error attempting to list all snapshots" 5
 }
 
 do_list_snapshot_details() {
   try_with_exit \
-    "restic stats --mode=raw-data${snapshot_hash_id}" \
+    "${restic_cmd_and_args} stats --mode=raw-data${snapshot_hash_id}" \
     "restic error attempting to list snapshot details" 5
 }
 
 do_check_repo_for_errors() {
   try_with_exit \
-    "restic --verbose check" \
+    "${restic_cmd_and_args} --verbose check" \
     "restic error attempting to check repo for errors" 5
 }
 
@@ -583,12 +587,12 @@ do_backup_to_single_snapshot() {
   fi
 
   try_with_exit \
-    "restic --verbose --compression=${snapshot_compression_level} backup ${local_backup_paths}${dry_run}" \
+    "${restic_cmd_and_args} --verbose --compression=${snapshot_compression_level} backup ${local_backup_paths}${dry_run}" \
     "restic error attempting to backup to snapshot" 5
 }
 
 do_rotate_snapshots() {
-  rot="restic --verbose forget"
+  rot="${restic_cmd_and_args} --verbose forget"
   rot="${rot} --keep-within-daily 7d"
   rot="${rot} --keep-within-weekly 1m"
   rot="${rot} --keep-within-monthly 1y"
@@ -618,7 +622,7 @@ do_extract_snapshot() {
   fi
 
   try_with_exit \
-    "restic --verbose restore${snapshot_hash_id} --target ." \
+    "${restic_cmd_and_args} --verbose restore${snapshot_hash_id} --target ." \
     "restic error attempting to restore snapshot to working directory" 5
 }
 
@@ -631,7 +635,7 @@ do_extract_files_in_snapshot() {
   fi
 
   try_with_exit \
-    "restic --verbose restore --include=${file_path_to_extract}${snapshot_hash_id} --target ." \
+    "${restic_cmd_and_args} --verbose restore --include=${file_path_to_extract}${snapshot_hash_id} --target ." \
     "restic error attempting to restore files in snapshot to working directory" 5
 }
 
@@ -641,7 +645,7 @@ do_delete_snapshot() {
   fi
 
   try_with_exit \
-    "restic --verbose forget${snapshot_hash_id} --prune${dry_run}" \
+    "${restic_cmd_and_args} --verbose forget${snapshot_hash_id} --prune${dry_run}" \
     "restic error attempting to delete snapshot" 5
 }
 
@@ -654,7 +658,7 @@ do_long_list_snapshot_files() {
   fi
 
   try_with_exit \
-    "restic ls --long${snapshot_hash_id}" \
+    "${restic_cmd_and_args} ls --long${snapshot_hash_id}" \
     "restic error attempting long-list files in snapshot" 5
 }
 
@@ -668,7 +672,7 @@ do_find_files() {
   fi
 
   try_with_exit \
-    "restic find --long${snapshot_opt} '${file_path_to_find}'" \
+    "${restic_cmd_and_args} find --long${snapshot_opt} '${file_path_to_find}'" \
     "restic error attempting find files" 5
 }
 
@@ -693,20 +697,20 @@ do_initialize_repo_if_empty() {
   # NOTE: version 2 supports compression
   # see https://restic.readthedocs.io/en/latest/030_preparing_a_new_repo.html#preparing-a-new-repository
   try_with_exit \
-    "restic --verbose init --repository-version=2" \
+    "${restic_cmd_and_args} --verbose init --repository-version=2" \
     "restic error attempting to initialize repo" 5
 }
 
 do_nuke_entire_repo() {
   # ref: https://github.com/restic/restic/issues/1977#issuecomment-417393284
   try_with_exit \
-    "restic --verbose forget --keep-last=1" \
+    "${restic_cmd_and_args} --verbose forget --keep-last=1" \
     "restic nuke error in step 1 (delete all but latest snapshots)" 5
   try_with_exit \
-    "restic --verbose forget latest" \
+    "${restic_cmd_and_args} --verbose forget latest" \
     "restic nuke error in step 2 (delete latest snapshot)" 5
   try_with_exit \
-    "restic --verbose --cleanup-cache prune" \
+    "${restic_cmd_and_args} --verbose --cleanup-cache prune" \
     "restic nuke error in step 3 (clean cache)" 5
 }
 
