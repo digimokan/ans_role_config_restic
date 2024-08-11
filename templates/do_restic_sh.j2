@@ -1,9 +1,6 @@
 #!/bin/sh
 # vim: set filetype=sh:
 
-# TESTING!!
-echo "do_restic.sh script start" > /tmp/restic_run_log.txt
-
 ################################################################################
 # purpose:   do restic backups, restores, and query info
 # args/opts: see usage (run with -h option)
@@ -216,17 +213,11 @@ try_with_exit() {
   cmd="${1}"
   err_msg="${2}"
   err_code="${3}"
-  # echo "Executing cmd: '${cmd}'..."
-  # TESTING!!!!!!!!!!!!
-  echo "Executing cmd: '${cmd}'..." >> /tmp/restic_run_log.txt
-  # eval "${cmd}"
-  # TESTING!!!!!!!!!!!!
-  eval "${cmd}" 1>> /tmp/restic_run_log.txt 2>&1
+  echo "Executing cmd: '${cmd}'..."
+  eval "${cmd}"
 
   exit_code="${?}"
   if [ "${exit_code}" != 0 ]; then
-    # TESTING!!
-    echo "${err_msg}" >> /tmp/restic_run_log.txt
     quit_err_msg_with_help "${err_msg}" "${err_code}"
   fi
 }
@@ -531,10 +522,6 @@ handle_missing_option_arg() {
 }
 
 export_opts_for_restic_cmds() {
-  # TESTING!!
-  echo "export_opts_for_restic_cmds repo_pass_cmd: ${repo_pass_cmd}" >> /tmp/restic_run_log.txt
-  echo "export_opts_for_restic_cmds repo_pass_cmd_file_path: ${repo_pass_cmd_file_path}" >> /tmp/restic_run_log.txt
-
   if [ "${repo_pass_cmd}" != '' ]; then
     export RESTIC_PASSWORD_COMMAND="${repo_pass_cmd}"
   elif [ -f "${repo_pass_cmd_file_path}" ]; then
@@ -553,8 +540,6 @@ export_opts_for_restic_cmds() {
 
 check_running_as_default_user() {
   if [ "$(id -un)" != "${restic_user_name}" ] && [ "${allow_non_default_user}" = 'false' ]; then
-    # TESTING!!
-    echo "check_running_as_default_user FAILED" >> /tmp/restic_run_log.txt
     quit_err_msg_with_help "run this script as user '${restic_user_name}', or use -U to override" 1
   fi
 }
