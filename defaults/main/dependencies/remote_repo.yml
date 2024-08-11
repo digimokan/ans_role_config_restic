@@ -1,0 +1,9 @@
+# an S3 bucket that will host the remote repo (MUST DEFINE!)
+# restic_s3_bucket_url: 's3:https://s3.wasabisys.com/my-bucket-name'
+
+# the provider-issued ID for the bucket (MUST DEFINE!)
+# restic_s3_bucket_key_id: '<my-wasabi-access-key-id>'
+
+# the provider-issued key-string for the bucket (MUST DEFINE!)
+# restic_s3_bucket_secret_keystring: '<my-wasabi-secret-access-key>'
+

@@ -1,9 +1,10 @@
-- name: "Set repo-pass-cmd as '{{ default_pass_cmd }}', in '{{ default_pass_cmd_file_path }}'"
+- name: "Set repo-pass-cmd as '{{ restic_default_pass_cmd }}', in '{{ restic_default_pass_cmd_path }}'"
   ansible.builtin.template:
-    dest: "{{ default_pass_cmd_file_path }}"
-    src: "default_pass_cmd.j2"
+    dest: "{{ restic_default_pass_cmd_path }}"
+    src: "default_pass_cmd_sh.j2"
+    mode: '755'
     force: true
   become: true
   become_user: "{{ restic_user_name }}"
-  when: default_pass_cmd is defined
+  when: restic_default_pass_cmd is defined
 

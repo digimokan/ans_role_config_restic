@@ -1,0 +1,3 @@
+# name of primary restic user to configure the backups for
+restic_user_name: 'user2'
+

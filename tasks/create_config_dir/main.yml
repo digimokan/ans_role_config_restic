@@ -3,7 +3,7 @@
     path: "{{ restic_config_dir }}"
     state: directory
   vars:
-    restic_config_dir: "{{ default_password_keystring_file_path | dirname }}/restic"
+    restic_config_dir: "{{ restic_default_passwd_keystr_file_path | dirname }}/restic"
   become: true
   become_user: "{{ restic_user_name }}"
 

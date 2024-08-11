@@ -4,7 +4,7 @@
 
 - name: "Set user_guide_src var to wasabi storage provider"
   ansible.builtin.set_fact:
-    user_guide_src: 'user_guide_wasabi.j2'
+    user_guide_src: 'user_guide_wasabi_md.j2'
   when: restic_user_guide_format == 'wasabi'
 
 - name: "Check that restic_user_guide_format is set to supported storage provider"

@@ -27,7 +27,7 @@ find_files='false'
 initialize_repo_if_empty='false'
 nuke_entire_repo='false'
 set_repo_password_keystring_file_path='false'
-repo_password_keystring_file_path='{{ default_password_keystring_file_path }}'
+repo_password_keystring_file_path='{{ restic_default_passwd_keystr_file_path }}'
 use_repo_pass_cmd='false'
 repo_pass_cmd=''
 s3_bucket_url='{{ restic_s3_bucket_url }}'
@@ -39,7 +39,7 @@ local_backup_paths=''
 dry_run=''
 
 # Hard-Coded Settings
-repo_pass_cmd_file_path='{{ default_pass_cmd_file_path }}'
+repo_pass_cmd_file_path='{{ restic_default_pass_cmd_path }}'
 password_keystring_length='32'
 snapshot_compression_level='max'
 restic_user_name='{{ restic_user_name }}'
@@ -72,7 +72,7 @@ print_usage() {
   echo '  -b, --backup-to-single-snapshot'
   echo '      back up specified backup paths to a snapshot on the remote'
   echo '  -a, --auto-backup-and-rotate-snapshots'
-  echo '      backup {{ automatic_restic_backup_dirs }} to daily snapshot, and rotate daily/weekly/etc'
+  echo '      backup {{ restic_automatic_daily_backup_dirs }} to daily snapshot, and rotate daily/weekly/etc'
   echo '  -x, --fetch-and-extract-snapshot'
   echo '      fetch specified snapshot (defaults to latest) from remote, extract to working dir'
   echo '  -X <file_name>, --fetch-and-extract-files-in-snapshot=<file_name>'
@@ -84,7 +84,7 @@ print_usage() {
   echo '  -f <file_name>, --find-files-in-snapshots=<file_name>'
   echo '      search all snapshots and list matching files (use shell wildcards, partial paths)'
   echo '  -g, --generate-keystring-file'
-  echo "      generate password_keystring_file (if not exist) at '{{ default_password_keystring_file_path }}'"
+  echo "      generate password_keystring_file (if not exist) at '{{ restic_default_passwd_keystr_file_path }}'"
   echo '  -i, --initialize-repo-if-empty'
   echo '      init repo (can be done once only, for a remote bucket)'
   echo '  -s <snapshot_hash_id>, --snapshot-hash-id=<snapshot_hash_id>'
@@ -94,9 +94,9 @@ print_usage() {
   echo '  -n, --dry-run'
   echo "      do a 'dry-run' of the backup operation"
   echo '  -P <file_path>, --repo-password-keystring-file-path=<file_path>'
-  echo "      use keystring file at specified path (default '{{ default_password_keystring_file_path }}') to access repo"
+  echo "      use keystring file at specified path (default '{{ restic_default_passwd_keystr_file_path }}') to access repo"
   echo '  -M <get_password_cmd>, --use-repo-pass-cmd=<get_password_cmd>'
-  echo "      use get_password_cmd output (default from '{{ default_pass_cmd_file_path }}') to access repo"
+  echo "      use get_password_cmd output (default from '{{ restic_default_pass_cmd_path }}') to access repo"
   echo '      NOTE: get_password_cmd and associated file override keystring file'
   echo '  -L <url>, --remote-bucket-url=<url>'
   echo "      remote S3 bucket url (default '{{ restic_s3_bucket_url }}')"
@@ -538,7 +538,7 @@ export_opts_for_restic_cmds() {
   if [ "${repo_pass_cmd}" != '' ]; then
     export RESTIC_PASSWORD_COMMAND="${repo_pass_cmd}"
   elif [ -f "${repo_pass_cmd_file_path}" ]; then
-    RESTIC_PASSWORD_COMMAND="$(cat "${repo_pass_cmd_file_path}")"
+    RESTIC_PASSWORD_COMMAND="${repo_pass_cmd_file_path}"
     export RESTIC_PASSWORD_COMMAND
   elif [ -f "${repo_password_keystring_file_path}" ]; then
     export RESTIC_PASSWORD_FILE="${repo_password_keystring_file_path}"
@@ -604,7 +604,7 @@ do_auto_backup_and_rotate_snapshots() {
   if [ "${local_backup_paths}" != '' ]; then
     quit_err_msg_with_help "invalid 'local-backup-paths' option" 1
   fi
-  local_backup_paths="{{ automatic_restic_backup_dirs | join(' ') }}"
+  local_backup_paths="{{ restic_automatic_daily_backup_dirs | join(' ') }}"
   do_backup_to_single_snapshot "$@"
   do_rotate_snapshots "$@"
 }

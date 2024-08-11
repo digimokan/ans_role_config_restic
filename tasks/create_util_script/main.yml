@@ -1,11 +1,11 @@
 - name: "Check if repo-password-keystring-file exists"
   ansible.builtin.stat:
-    path: "{{ default_password_keystring_file_path }}"
+    path: "{{ restic_default_passwd_keystr_file_path }}"
   register: password_keystring_file_stat_result
 
 - name: "Check if get-pass-cmd-file exists"
   ansible.builtin.stat:
-    path: "{{ default_pass_cmd_file_path }}"
+    path: "{{ restic_default_pass_cmd_path }}"
   register: get_pass_cmd_file_stat_result
 
 - name: "Check that repo-password-keystring-file OR get-pass-cmd-file exists"
@@ -25,7 +25,7 @@
 - name: "Create '/usr/local/bin/do_restic.sh' utility script"
   ansible.builtin.template:
     dest: "/usr/local/bin/do_restic.sh"
-    src: "do_restic.j2"
+    src: "do_restic_sh.j2"
     owner: 'root'
     mode: '755'
     force: true

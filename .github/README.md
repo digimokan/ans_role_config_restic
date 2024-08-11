@@ -22,7 +22,7 @@ Install the restic backup program, and configure backups to a remote repo.
   backup program.
 * Configure remote backups.
 * Optionally configure automatic periodic remote backups.
-* Simplify restic usage by providing a [utility script](../templates/do_restic.j2).
+* Simplify restic usage by providing a [utility script](../templates/do_restic_sh.j2).
 
 ## Background
 
@@ -51,7 +51,7 @@ Install the restic backup program, and configure backups to a remote repo.
 
 1. S3 bucket has been created on an S3-compatible storage provider.
 2. Bucket has been initialized.
-    * The [utility script](../templates/do_restic.j2) can be used to initialize
+    * The [utility script](../templates/do_restic_sh.j2) can be used to initialize
       the bucket.
     * It is ok if the bucket already has snapshots; if the same files are
       being backed up, they will be deduplicated.
@@ -95,21 +95,22 @@ Install the restic backup program, and configure backups to a remote repo.
            restic_s3_bucket_url: 's3:https://s3.someprovider.com/my-bucket-name'
            restic_s3_access_key_id: '<MY-S3-ACCESS-KEY-ID>'
            restic_s3_secret_access_key: '<MY-S3-SECRET-ACCESS-KEY>'
-           enable_automatic_backups: true
-           automatic_backup_dirs:
+           restic_default_pass_cmd: 'pass -c restic'
+           restic_automatic_daily_backup_dirs:
              - '/home/user2/Documents/'
+           restic_automatic_daily_backup_hour: 23
+           restic_user_guide_dir: '/home/user2/docs/'
    ```
 
 ## Role Options
 
-See the role `defaults` files for main role vars listings:
+Vars that must be defined when including the role in the playbook:
 
-  * [defaults](../defaults/main/)
+  * [dependencies](../defaults/main/dependencies/remote_repo.yml)
 
-Define these _required_ vars for the role:
+Vars with default values, which can be overridden in the playbook:
 
-  * `restic_user_name`: name of primary restic user to configure the backups for
-  * [S3 access credentials and repo password](../defaults/main/remote_repo.yml)
+  * [overridable](../defaults/main/overridable)
 
 ## Contributing
 
