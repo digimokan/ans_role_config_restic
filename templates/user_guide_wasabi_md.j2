@@ -17,16 +17,16 @@
     * RESTIC_REPOSITORY: '{{ restic_s3_bucket_url }}'
     * AWS_ACCESS_KEY_ID: '{{ restic_s3_bucket_key_id }}'
     * AWS_SECRET_ACCESS_KEY: '{{ restic_s3_bucket_secret_keystring }}'
-    * RESTIC_PASSWORD: '{{ repo_password_keystring_chars }}'
+    * RESTIC_PASSWORD: '{{ restic_repo_password_keystring_chars }}'
 * __You need the four parameters above to access your backup files.__
 * __So, print this file and keep it in a safe, secure location.__
 
 # AUTOMATIC BACKUPS
 
 * All your files in the following director(y/ies) will be backed up:
-  {{ automatic_restic_backup_dirs }}
+  {{ restic_automatic_daily_backup_dirs }}
 * The backup will be run automatically every day, at the following hour (0 is
-  midnight, 3 is 0300, 15 is 1500, etc): {{ daily_automatic_backup_hour }}.
+  midnight, 3 is 0300, 15 is 1500, etc): {{ restic_automatic_daily_backup_hour }}.
 * This machine must be powered on in order for the automatic backup job to run.
 
 # CHECKING BACKUPS
