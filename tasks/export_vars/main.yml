@@ -6,5 +6,5 @@
       job_minute: "0"
       job_hour: "{{ restic_automatic_daily_backup_hour }}"
       job_cmd: "/usr/local/bin/do_restic.sh --auto-backup-and-rotate-snapshots"
-  when: restic_automatic_daily_backup_dirs | length == 0
+  when: restic_automatic_daily_backup_dirs | length > 0
 
