@@ -6,6 +6,5 @@ restic_automatic_daily_backup_dirs: []
 
 # for automatic backups, run the daily backup at this hour
 # NOTE: '0' for midnight, '3' for 3 am, '15' for 3 pm, etc
-# restic_automatic_daily_backup_hour: '3'
-restic_automatic_daily_backup_hour: '17'
+restic_automatic_daily_backup_hour: '3'
 
