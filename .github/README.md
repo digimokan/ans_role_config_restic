@@ -90,6 +90,7 @@ Install the restic backup program, and configure backups to a remote repo.
        - name: "Install the restic backup program, and configure backups to a remote repo"
          ansible.builtin.include_role:
            name: ans_role_config_restic
+           public: true
          vars:
            restic_user_name: 'user2'
            restic_s3_bucket_url: 's3:https://s3.someprovider.com/my-bucket-name'

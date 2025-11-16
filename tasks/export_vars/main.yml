@@ -1,0 +1,10 @@
+- name: "Define export var 'restic_automatic_daily_backup_cron_job'"
+  ansible.builtin.set_fact:
+    restic_automatic_daily_backup_cron_job:
+      job_label: "restic_auto_bkup_{{ restic_user_name }}"
+      job_user: "{{ restic_user_name }}"
+      job_minute: "0"
+      job_hour: "{{ restic_automatic_daily_backup_hour }}"
+      job_cmd: "/usr/local/bin/do_restic.sh --auto-backup-and-rotate-snapshots"
+  when: restic_automatic_daily_backup_dirs | length == 0
+
